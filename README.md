@@ -300,6 +300,32 @@ kubectl get ingress -n argocd
 kubectl get svc -n ingress-nginx ingress-nginx-controller -o yaml
 ```
 
+### EKS Nodes Not Joining
+
+**Solution:**
+```bash
+# Check node status
+kubectl get nodes
+
+# Check node logs
+aws ec2 describe-instances --filters "Name=tag:eks:cluster-name,Values=myapp-dev" \
+  --query 'Reservations[].Instances[].[InstanceId,State.Name]'
+
+# Verify IAM role permissions
+aws eks describe-nodegroup --cluster-name myapp-dev --nodegroup-name system
+```
+
+### Terraform State Lock Issues
+
+**Solution:**
+```bash
+# Check current locks
+aws dynamodb scan --table-name terraform-locks-471448382412
+
+# Force unlock (use with caution!)
+terragrunt force-unlock LOCK_ID
+```
+
 ---
 
 ## 🔗 CI/CD Integration
