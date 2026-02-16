@@ -8,9 +8,10 @@ module "eks" {
   subnet_ids      = var.private_subnet_ids
 
   # --- CONTROL PLANE ACCESS ---
-  # Dev: Public API for convenience (you can access from laptop)
-  # Prod: Private only (access via VPN/bastion)
-  cluster_endpoint_public_access  = var.environment == "dev"
+  # Enable both public and private access for deployment flexibility
+  # Public access: Allows deployment from local machines/CI/CD (can restrict by IP if needed)
+  # Private access: Allows nodes and pods to access API via VPC
+  cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
   # --- MODERN AUTHENTICATION ---

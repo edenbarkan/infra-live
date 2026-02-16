@@ -17,6 +17,13 @@ dependency "eks" {
   mock_outputs_allowed_terraform_commands = ["destroy"]
 }
 
+# Karpenter needs AWS Load Balancer Controller webhook to be ready
+# Without this dependency, Karpenter deployment fails with webhook timeout
+dependency "aws_lbc" {
+  config_path = "../aws-load-balancer-controller"
+  skip_outputs = true
+}
+
 locals {
   env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
 }
