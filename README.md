@@ -1,0 +1,488 @@
+# 🚀 Infrastructure Live - Production EKS on AWS
+
+> **Best Practices** | **GitOps Ready** | **Cost Optimized** | **Interview Ready**
+
+[![Terraform](https://img.shields.io/badge/Terraform-1.5+-623CE4?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Terragrunt](https://img.shields.io/badge/Terragrunt-Latest-00ADD8)](https://terragrunt.gruntwork.io/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.30-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![AWS EKS](https://img.shields.io/badge/AWS-EKS-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/eks/)
+
+---
+
+## 📖 Table of Contents
+
+- [Architecture](#️-architecture-overview)
+- [Quick Start](#-quick-start)
+- [CI/CD Flow](#-cicd-flow)
+- [Traffic Flow](#-traffic-flow)
+- [Repository Structure](#-repository-structure)
+- [Deployment](#-deployment)
+- [Troubleshooting](#-troubleshooting)
+- [CI/CD Integration](#-cicd-integration)
+- [Cost](#-cost-breakdown)
+- [Interview Guide](#-interview-talking-points)
+
+---
+
+## 🏗️ Architecture Overview
+
+```mermaid
+graph TB
+    subgraph AWS["AWS Account (us-east-1)"]
+        subgraph DevCluster["EKS Cluster: myapp-dev<br/>VPC: 10.0.0.0/16 | NAT: 1"]
+            DevNS["Namespaces:<br/>• dev<br/>• staging"]
+            DevInfra["Infrastructure:<br/>• ArgoCD<br/>• Karpenter<br/>• Ingress-NGINX<br/>• AWS LBC<br/>• External Secrets"]
+            DevNodes["Nodes:<br/>• System: 2×t3.medium<br/>• Karpenter: Spot ☁️"]
+        end
+
+        subgraph ProdCluster["EKS Cluster: myapp-prod<br/>VPC: 10.1.0.0/16 | NAT: 3 (HA)"]
+            ProdNS["Namespace:<br/>• production"]
+            ProdInfra["Infrastructure:<br/>• ArgoCD<br/>• Karpenter<br/>• Ingress-NGINX<br/>• AWS LBC<br/>• External Secrets"]
+            ProdNodes["Nodes:<br/>• System: 2×t3.medium<br/>• Karpenter: On-demand"]
+        end
+
+        subgraph Shared["Shared Resources"]
+            ECR["ECR<br/>(Container Registry)"]
+            S3["S3<br/>(Terraform State)"]
+            DynamoDB["DynamoDB<br/>(State Locking)"]
+            SM["Secrets Manager<br/>(dev/* & prod/*)"]
+        end
+    end
+
+    DevCluster -.-> Shared
+    ProdCluster -.-> Shared
+
+    style DevCluster fill:#e3f2fd
+    style ProdCluster fill:#fff3e0
+    style Shared fill:#f3e5f5
+```
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# 1. Install tools
+brew install terragrunt kubectl awscli
+
+# 2. Configure AWS
+aws configure
+
+# 3. Deploy everything
+./deploy.sh
+
+# 4. Verify
+kubectl get nodes
+kubectl get pods -A
+
+# 5. Cleanup (when done)
+ALLOW_DESTROY=true ./destroy.sh all
+```
+
+---
+
+## 🔄 CI/CD Flow
+
+```mermaid
+graph LR
+    A[Developer<br/>commits code] --> B[GitHub Actions<br/>Build & Test]
+    B --> C[Push to ECR<br/>myapp:abc1234]
+    C --> D[Update<br/>helm-charts repo]
+    D --> E[ArgoCD<br/>detects change]
+    E --> F[Deploy to<br/>Dev namespace]
+    F --> G{Manual<br/>Promotion}
+    G -->|Staging| H[Deploy to<br/>Staging]
+    G -->|Prod| I[Manual Sync<br/>in ArgoCD UI]
+
+    style A fill:#bbdefb
+    style C fill:#c8e6c9
+    style F fill:#fff9c4
+    style I fill:#ffccbc
+```
+
+**Flow Details:**
+1. Developer pushes to `develop` branch
+2. GitHub Actions: Build → Test → Security Scan → Push to ECR
+3. CI updates `helm-charts` repo with new image tag
+4. ArgoCD detects Git change and auto-syncs dev
+5. Manual promotion workflows for staging/prod
+
+---
+
+## 🌐 Traffic Flow
+
+```mermaid
+graph TD
+    A[🌍 Internet<br/>User Request] --> B[🔀 Route53<br/>DNS Resolution]
+    B --> C[⚖️ ALB<br/>TLS Termination]
+    C --> D[🔧 Ingress-NGINX<br/>Path/Host Routing]
+    D --> E[📦 App Service<br/>ClusterIP]
+    E --> F[🐳 App Pods<br/>Karpenter Nodes]
+    F --> G[✅ Response]
+
+    H[🔐 Secrets Manager] -.->|External Secrets| F
+    I[📦 ECR] -.->|Pull Image| F
+
+    style A fill:#e1f5fe
+    style C fill:#fff3e0
+    style D fill:#f3e5f5
+    style F fill:#c8e6c9
+    style G fill:#c5e1a5
+```
+
+---
+
+## 📂 Repository Structure
+
+```
+infra-live/
+├── 📄 README.md                     You are here
+├── 🚀 deploy.sh                     Automated deployment
+├── 🧹 destroy.sh                    Cleanup script
+├── ⚙️  terragrunt.hcl                Root configuration
+│
+├── 🔧 bootstrap/                    Phase 1: S3 + DynamoDB
+│   └── terragrunt.hcl
+│
+├── 📦 modules/                      Terraform modules
+│   ├── vpc/                        Network
+│   ├── eks/                        Cluster
+│   ├── karpenter/                  Autoscaling
+│   ├── aws-load-balancer-controller/  ALB
+│   ├── ingress-nginx/              Routing
+│   ├── external-secrets/           Secrets
+│   ├── argocd/                     GitOps
+│   └── ecr/                        Registry
+│
+├── 🔬 dev/                          Dev environment
+│   ├── env.hcl                     Config
+│   ├── vpc/
+│   ├── eks/
+│   ├── karpenter/
+│   ├── aws-load-balancer-controller/
+│   ├── ingress-nginx/
+│   ├── external-secrets/
+│   └── argocd/
+│
+├── 🏭 prod/                         Prod environment
+│   └── ... (same as dev)
+│
+└── 📦 ecr/                          Shared registry
+    └── terragrunt.hcl
+```
+
+---
+
+## 🚀 Deployment
+
+### Method 1: Automated (Recommended)
+```bash
+./deploy.sh              # Deploy all
+./deploy.sh dev          # Dev only
+./deploy.sh prod         # Prod only
+```
+
+### Method 2: Manual
+```bash
+# Bootstrap
+cd bootstrap && terragrunt apply
+
+# Dev
+cd dev && terragrunt run-all apply
+
+# Prod
+cd prod && terragrunt run-all apply
+
+# ECR
+cd ecr && terragrunt apply
+```
+
+### Post-Deployment
+```bash
+# Connect
+aws eks update-kubeconfig --name myapp-dev --region us-east-1
+
+# Verify
+kubectl get nodes
+kubectl get pods -A
+
+# Get ArgoCD password
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d
+
+# Access ArgoCD
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# → https://localhost:8080
+```
+
+### ArgoCD ApplicationSets
+
+After infrastructure deployment, ApplicationSets are automatically applied by `deploy.sh`.
+
+**What ApplicationSets do:**
+- **Dev cluster**: Creates 2 applications (myapp-dev, myapp-staging) with auto-sync
+- **Prod cluster**: Creates 1 application (myapp-production) with manual sync
+
+**Verify deployment:**
+```bash
+# Check ApplicationSets
+kubectl get applicationset -n argocd
+
+# Check generated Applications
+kubectl get application -n argocd
+
+# View in ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# → https://localhost:8080
+```
+
+**Manual deployment (if needed):**
+```bash
+# Dev cluster
+kubectl apply -f ../helm-charts/argocd-apps/dev-applicationset.yaml
+
+# Prod cluster
+kubectl apply -f ../helm-charts/argocd-apps/prod-applicationset.yaml
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### ArgoCD Applications Not Syncing
+
+**Symptom:** Applications show "Unknown" or "OutOfSync" status
+
+**Solution:**
+```bash
+# 1. Check GitHub PAT secret
+kubectl get secret -n argocd github-token
+
+# If missing, create it:
+kubectl -n argocd create secret generic github-token \
+  --from-literal=token=YOUR_GITHUB_PAT
+
+# 2. Check ArgoCD logs
+kubectl logs -n argocd deployment/argocd-repo-server
+kubectl logs -n argocd deployment/argocd-application-controller
+
+# 3. Manually sync
+kubectl patch application myapp-dev -n argocd --type merge \
+  -p '{"operation": {"sync": {}}}'
+```
+
+### Karpenter Not Scaling
+
+**Solution:**
+```bash
+# Check logs
+kubectl logs -n karpenter deployment/karpenter
+
+# Verify NodePool exists
+kubectl get nodepool
+kubectl get ec2nodeclass
+
+# Check pending pods
+kubectl get pods -A | grep Pending
+```
+
+### Ingress Not Creating ALB
+
+**Solution:**
+```bash
+# Check AWS Load Balancer Controller logs
+kubectl logs -n kube-system deployment/aws-load-balancer-controller
+
+# Verify ingress created
+kubectl get ingress -n argocd
+
+# Check service annotations
+kubectl get svc -n ingress-nginx ingress-nginx-controller -o yaml
+```
+
+---
+
+## 🔗 CI/CD Integration
+
+### GitHub Actions Workflow
+
+**Trigger:** Push to `develop` or `main` branch
+
+**Flow:**
+1. GitHub Actions builds Docker image
+2. Pushes to ECR with git SHA tag
+3. Updates `helm-charts` repo with new image tag
+4. ArgoCD detects change and syncs:
+   - **Dev**: Auto-sync (immediate deployment)
+   - **Staging**: Manual git commit to promote
+   - **Prod**: Manual sync in ArgoCD UI (requires approval)
+
+**Setup:**
+1. GitHub Secrets configured:
+   - `AWS_ACCOUNT_ID`: AWS account
+   - `GH_PAT`: GitHub Personal Access Token
+
+2. OIDC role created via ECR module:
+   - Role: `GitHubActionsECRAccess`
+   - Trust: GitHub Actions from your repo
+
+**Manual Promotion:**
+```bash
+# Dev → Staging
+cd helm-charts
+yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/staging/values.yaml
+git commit -m "promote: myapp abc1234 to staging"
+git push
+
+# Staging → Prod
+yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/production/values.yaml
+git commit -m "promote: myapp abc1234 to production"
+git push
+# Then manually sync in ArgoCD UI
+```
+
+---
+
+## 💰 Cost Breakdown
+
+| Environment | Control Plane | NAT | Nodes | **Total** |
+|-------------|--------------|-----|-------|-----------|
+| **Dev** | $73 | $32 | $60+ | **~$165/mo** |
+| **Prod** | $73 | $96 | $60+ | **~$229/mo** |
+
+### Cost Optimizations
+- ✅ **Spot instances** in dev (~70% savings)
+- ✅ **Karpenter consolidation** (auto-removes underutilized nodes)
+- ✅ **Single NAT** in dev vs 3 in prod
+- ✅ **ECR lifecycle policies** (auto-delete old images)
+
+---
+
+## 🔍 Module Dependency Graph
+
+```mermaid
+graph TD
+    A[Bootstrap<br/>S3 + DynamoDB] --> B[VPC<br/>Network]
+    B --> C[EKS<br/>Cluster]
+    C --> D[Karpenter<br/>Autoscaling]
+    C --> E[AWS LBC<br/>ALB Integration]
+    C --> F[External Secrets<br/>Secrets Mgmt]
+    E --> G[Ingress-NGINX<br/>Routing]
+    G --> H[ArgoCD<br/>GitOps]
+
+    style A fill:#ffcdd2
+    style B fill:#c5e1a5
+    style C fill:#90caf9
+    style D fill:#fff59d
+    style E fill:#ce93d8
+    style F fill:#ffab91
+    style G fill:#80deea
+    style H fill:#a5d6a7
+```
+
+---
+
+## 🎯 Interview Talking Points
+
+### Q: Why separate EKS clusters for dev and prod?
+
+> **Blast radius containment** - Bad configs in dev can't affect prod. Also enables **cost optimization**: dev uses spot instances + 1 NAT gateway, while prod uses on-demand + 3 NAT gateways for HA.
+
+### Q: Why Karpenter instead of Cluster Autoscaler?
+
+> **3 key advantages:**
+> 1. **Faster** - 30-60s vs 3-5min node provisioning
+> 2. **Smarter** - Picks cheapest instance that fits workload
+> 3. **Cost-effective** - Auto-consolidates underutilized nodes
+
+### Q: Explain the traffic flow from internet to app.
+
+> **Internet → Route53 (DNS) → ALB (TLS termination) → Ingress-NGINX (routing) → Service → Pods**
+>
+> ALB handles AWS-specific features (security groups, target groups), while NGINX provides flexible routing (path/host rules).
+
+### Q: How are secrets managed?
+
+> **External Secrets Operator** syncs from **AWS Secrets Manager**. Secrets never touch Git. Path-based isolation (`dev/*` and `prod/*`) with IAM policies ensures dev can only read dev secrets.
+
+### Q: What is IRSA and why use it?
+
+> **IAM Roles for Service Accounts** - Uses OIDC to map K8s ServiceAccounts to specific IAM roles. Each pod gets exactly the permissions it needs, unlike EC2 instance roles which grant the same permissions to all pods on a node.
+
+---
+
+## 🔐 Security Features
+
+| Feature | Implementation |
+|---------|---------------|
+| **IRSA** | Karpenter, AWS LBC, External Secrets use IRSA |
+| **Secrets** | AWS Secrets Manager + External Secrets Operator |
+| **Network** | Private subnets for nodes, public for ALB only |
+| **Container** | Non-root, read-only filesystem, dropped capabilities |
+| **Scanning** | ECR scans for CVEs on push |
+| **State** | S3 with encryption + DynamoDB locking |
+
+---
+
+## ✨ Best Practices Checklist
+
+- [x] **DRY Configuration** - Terragrunt eliminates duplication
+- [x] **State Management** - S3 backend with DynamoDB locking
+- [x] **Cost Optimization** - Karpenter spot instances & consolidation
+- [x] **High Availability** - Multi-AZ, PDBs, topology spread
+- [x] **GitOps** - ArgoCD for declarative deployments
+- [x] **Monitoring Ready** - Metrics server for HPA
+- [x] **Secrets Management** - External Secrets Operator
+- [x] **Immutable Infrastructure** - Everything in code
+
+---
+
+## 📚 Related Repositories
+
+1. **[infra-live](.)** (this repo) - Terraform/Terragrunt infrastructure
+2. **[helm-charts](../helm-charts)** - Generic Helm chart + app configs
+3. **[app-source](../app-source)** - Application code + CI/CD
+
+---
+
+## 🧹 Cleanup
+
+```bash
+# Destroy specific environment
+ALLOW_DESTROY=true ./destroy.sh dev
+
+# Destroy everything (dev + prod + ECR + bootstrap)
+ALLOW_DESTROY=true ./destroy.sh all
+```
+
+---
+
+## 🔧 Maintenance Tasks
+
+### Update Kubernetes Version
+```bash
+# Edit env.hcl
+eks_version = "1.31"
+
+# Apply
+cd dev/eks && terragrunt apply
+```
+
+### Scale Karpenter Limits
+```bash
+# Edit env.hcl, then:
+cd dev/karpenter && terragrunt apply
+```
+
+### Node Rotation
+Karpenter auto-rotates nodes every 30 days (`expireAfter: 720h`)
+
+---
+
+<div align="center">
+
+**🚀 Built for Production | 💼 Interview Ready | ❤️ Open Source Inspired**
+
+[⬆ Back to Top](#-infrastructure-live---production-eks-on-aws)
+
+</div>

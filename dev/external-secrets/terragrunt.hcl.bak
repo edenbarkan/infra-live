@@ -1,0 +1,23 @@
+include "root" {
+  path = find_in_parent_folders()
+}
+
+terraform {
+  source = "../../modules/external-secrets"
+}
+
+dependency "eks" {
+  config_path = "../eks"
+}
+
+locals {
+  env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+}
+
+inputs = {
+  cluster_name      = local.env.locals.cluster_name
+  oidc_provider_arn = dependency.eks.outputs.oidc_provider_arn
+  environment       = local.env.locals.environment
+  region            = "us-east-1"
+  tags              = local.env.locals.tags
+}

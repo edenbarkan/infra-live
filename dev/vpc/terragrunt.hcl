@@ -1,0 +1,22 @@
+# Inherit remote state and provider from root
+include "root" {
+  path = find_in_parent_folders()
+}
+
+# Point to the VPC module
+terraform {
+  source = "../../modules/vpc"
+}
+
+# Read dev-specific variables
+locals {
+  env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+}
+
+# Pass values from env.hcl to the module
+inputs = {
+  cluster_name = local.env.locals.cluster_name  # "myapp-dev"
+  vpc_cidr     = local.env.locals.vpc_cidr      # "10.0.0.0/16"
+  environment  = local.env.locals.environment   # "dev"
+  tags         = local.env.locals.tags          # { Environment = "dev" }
+}
