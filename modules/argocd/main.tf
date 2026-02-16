@@ -97,10 +97,10 @@ resource "kubectl_manifest" "argocd_project" {
     }
     spec = {
       description = "${var.environment} environment"
-      
+
       # Which Git repos are allowed
       sourceRepos = [var.helm_charts_repo_url]
-      
+
       # Which namespaces can be deployed to
       destinations = [
         for ns in var.namespaces : {
@@ -108,14 +108,81 @@ resource "kubectl_manifest" "argocd_project" {
           server    = "https://kubernetes.default.svc"
         }
       ]
-      
+
       # Only allow namespace-scoped resources (no cluster-admin)
       clusterResourceWhitelist = []
-      
+
       # All namespace-scoped resources allowed
       namespaceResourceWhitelist = [{ group = "*", kind = "*" }]
     }
   })
 
   depends_on = [helm_release.argocd]
+}
+
+# --- APPLICATIONSET: Auto-generates Applications for each namespace ---
+# Creates one Application per namespace (e.g., myapp-dev, myapp-staging)
+
+resource "kubectl_manifest" "applicationset" {
+  yaml_body = yamlencode({
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "ApplicationSet"
+    metadata = {
+      name      = "myapp-${var.environment}-envs"
+      namespace = "argocd"
+    }
+    spec = {
+      generators = [{
+        list = {
+          elements = [
+            for ns in var.namespaces : {
+              env       = ns
+              namespace = ns
+            }
+          ]
+        }
+      }]
+
+      template = {
+        metadata = {
+          name = "myapp-{{env}}"
+        }
+        spec = {
+          project = var.environment
+
+          source = {
+            repoURL        = var.helm_charts_repo_url
+            targetRevision = "main"
+            path           = "charts/generic-app"
+            helm = {
+              valueFiles = [
+                "../../apps/myapp/base/values.yaml",
+                "../../apps/myapp/overlays/{{env}}/values.yaml"
+              ]
+            }
+          }
+
+          destination = {
+            server    = "https://kubernetes.default.svc"
+            namespace = "{{namespace}}"
+          }
+
+          syncPolicy = {
+            automated = {
+              prune    = true
+              selfHeal = true
+            }
+            syncOptions = [
+              "CreateNamespace=true"
+            ]
+          }
+        }
+      }
+    }
+  })
+
+  depends_on = [
+    helm_release.argocd,
+    kubectl_manifest.argocd_project
+  ]
 }

@@ -3,6 +3,7 @@
 # 1. IAM role for Karpenter controller (to launch EC2 instances)
 # 2. IAM role for Karpenter-managed nodes (instance profile)
 # 3. SQS queue + EventBridge rules for spot interruption handling
+# 4. Pod Identity Association (modern AWS-recommended auth method)
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
@@ -10,8 +11,13 @@ module "karpenter" {
 
   cluster_name = var.cluster_name
 
-  # IRSA: Karpenter pod gets AWS permissions via ServiceAccount
-  irsa_oidc_provider_arn = var.oidc_provider_arn
+  # EKS Pod Identity (modern AWS best practice, replaces IRSA)
+  # Simpler than OIDC, AWS-managed, better performance
+  enable_pod_identity             = true
+  create_pod_identity_association = true
+
+  # CRITICAL: Pod Identity must be in same namespace as Karpenter Helm release
+  namespace = "karpenter"
 
   # Spot interruption handling: AWS sends 2-minute warning before terminating spot instance
   # Karpenter gracefully drains pods to other nodes
@@ -38,11 +44,10 @@ resource "helm_release" "karpenter" {
       clusterEndpoint   = var.cluster_endpoint
       interruptionQueue = module.karpenter.queue_name  # SQS queue for spot interruptions
     }
+    # Pod Identity: No annotations needed!
+    # The Pod Identity Association automatically links the SA to IAM role
     serviceAccount = {
-      annotations = {
-        # This links the K8s ServiceAccount to the IAM role (IRSA magic)
-        "eks.amazonaws.com/role-arn" = module.karpenter.iam_role_arn
-      }
+      name = "karpenter"  # Must match the Pod Identity Association
     }
   })]
 

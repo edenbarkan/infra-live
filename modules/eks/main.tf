@@ -30,17 +30,17 @@ module "eks" {
     coredns = {
       most_recent = true
     }
-    
+
     # kube-proxy: Network proxy on each node
     kube-proxy = {
       most_recent = true
     }
-    
+
     # VPC-CNI: Gives pods real VPC IP addresses
     vpc-cni = {
       most_recent    = true
       before_compute = true  # Must be ready before nodes join
-      
+
       # Enable prefix delegation: more IPs per node
       # Without this: max ~10-30 pods per node
       # With this: max ~110 pods per node
@@ -50,6 +50,12 @@ module "eks" {
           ENABLE_POD_ENI           = "true"
         }
       })
+    }
+
+    # EKS Pod Identity Agent: Required for Pod Identity to work
+    # Runs as a DaemonSet on each node to enable IAM role assumption
+    eks-pod-identity-agent = {
+      most_recent = true
     }
   }
 
@@ -67,17 +73,13 @@ module "eks" {
       max_size       = 3
       desired_size   = 2
       
-      # Taint these nodes so only infra pods schedule here
+      # Label these nodes for identification
       labels = {
         "node-role" = "system"
       }
-      
-      # System pods must tolerate this taint
-      taints = [{
-        key    = "CriticalAddonsOnly"
-        value  = "true"
-        effect = "NO_SCHEDULE"
-      }]
+
+      # No taints - allow all pods to schedule on these nodes
+      # This enables infrastructure addons to deploy immediately after cluster creation
     }
   }
 

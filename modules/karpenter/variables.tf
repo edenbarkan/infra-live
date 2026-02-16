@@ -13,11 +13,6 @@ variable "cluster_certificate_authority_data" {
   type        = string
 }
 
-variable "oidc_provider_arn" {
-  description = "OIDC provider ARN for IRSA (Karpenter needs AWS permissions)"
-  type        = string
-}
-
 variable "node_iam_role_name" {
   description = "IAM role name for Karpenter-managed nodes (optional, module creates if not provided)"
   type        = string
