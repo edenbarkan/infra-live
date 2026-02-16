@@ -26,8 +26,9 @@ terraform.rc
 # Terragrunt cache
 **/.terragrunt-cache/*
 
-# Lock files (optional - some teams commit these)
-# .terraform.lock.hcl
+# Lock files - excluded as they're environment-specific
+.terraform.lock.hcl
+**/.terraform.lock.hcl
 
 # OS files
 .DS_Store

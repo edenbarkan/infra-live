@@ -13,14 +13,9 @@
 
 - [Architecture](#️-architecture-overview)
 - [Quick Start](#-quick-start)
-- [CI/CD Flow](#-cicd-flow)
-- [Traffic Flow](#-traffic-flow)
+- [Documentation](#-documentation)
 - [Repository Structure](#-repository-structure)
-- [Deployment](#-deployment)
-- [Troubleshooting](#-troubleshooting)
-- [CI/CD Integration](#-cicd-integration)
 - [Cost](#-cost-breakdown)
-- [Interview Guide](#-interview-talking-points)
 
 ---
 
@@ -69,15 +64,27 @@ brew install terragrunt kubectl awscli
 aws configure
 
 # 3. Deploy everything
-./deploy.sh
+./scripts/deploy.sh all
 
 # 4. Verify
 kubectl get nodes
 kubectl get pods -A
 
 # 5. Cleanup (when done)
-ALLOW_DESTROY=true ./destroy.sh all
+ALLOW_DESTROY=true ./scripts/destroy.sh all
 ```
+
+---
+
+## 📚 Documentation
+
+Detailed guides are available in the [`docs/`](docs/) directory:
+
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions and configuration
+- **[Architecture](docs/ARCHITECTURE.md)** - Detailed architecture and component breakdown
+- **[ArgoCD Setup](docs/ARGOCD-SETUP.md)** - GitOps configuration and ApplicationSet management
+- **[Pod Identity Migration](docs/POD-IDENTITY.md)** - Modern AWS authentication setup
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ---
 
@@ -177,9 +184,9 @@ infra-live/
 
 ### Method 1: Automated (Recommended)
 ```bash
-./deploy.sh              # Deploy all
-./deploy.sh dev          # Dev only
-./deploy.sh prod         # Prod only
+./scripts/deploy.sh all  # Deploy all
+./scripts/deploy.sh dev  # Dev only
+./scripts/deploy.sh prod # Prod only
 ```
 
 ### Method 2: Manual
@@ -475,10 +482,10 @@ graph TD
 
 ```bash
 # Destroy specific environment
-ALLOW_DESTROY=true ./destroy.sh dev
+ALLOW_DESTROY=true ./scripts/destroy.sh dev
 
 # Destroy everything (dev + prod + ECR + bootstrap)
-ALLOW_DESTROY=true ./destroy.sh all
+ALLOW_DESTROY=true ./scripts/destroy.sh all
 ```
 
 ---
