@@ -78,6 +78,19 @@ ALLOW_DESTROY=true ./scripts/destroy.sh all
 
 ## 📚 Documentation
 
+### 🎨 Interactive Architecture Diagram
+
+**[Open Interactive Diagram](docs/architecture-diagram.html)** ← **Perfect for presentations & interviews!**
+
+A beautiful, interactive HTML visualization featuring:
+- 📊 Complete architecture overview with all components
+- 🔄 GitOps workflow from code to deployment
+- 🌐 Traffic flow and autoscaling diagrams
+- ⚙️ Full technology stack
+- 📈 Key metrics and achievements
+
+### Documentation Files
+
 Detailed guides are available in the [`docs/`](docs/) directory:
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions and configuration

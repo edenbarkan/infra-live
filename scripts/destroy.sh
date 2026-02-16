@@ -4,6 +4,8 @@
 # Usage: ALLOW_DESTROY=true ./destroy.sh [environment]
 #   environment: dev, prod, all (default: all)
 #
+# Non-interactive mode: AUTO_APPROVE=true ALLOW_DESTROY=true ./destroy.sh all
+#
 # ⚠️  WARNING: This will DELETE all resources and data!
 #
 
@@ -52,6 +54,12 @@ confirm_destruction() {
     warn "This action CANNOT be undone!"
     echo ""
 
+    if [ "${AUTO_APPROVE:-false}" = "true" ]; then
+        warn "AUTO_APPROVE=true: Skipping confirmation prompt"
+        info "Proceeding with destruction..."
+        return
+    fi
+
     read -p "Type '$env' to confirm destruction: " confirmation
 
     if [ "$confirmation" != "$env" ]; then
@@ -88,7 +96,14 @@ destroy_ecr() {
     warn "Do you want to destroy the ECR repository?"
     warn "This will delete ALL container images!"
     echo ""
-    read -p "Destroy ECR? [y/N]: " response
+
+    local response="n"
+    if [ "${AUTO_APPROVE:-false}" = "true" ]; then
+        warn "AUTO_APPROVE=true: Auto-destroying ECR"
+        response="y"
+    else
+        read -p "Destroy ECR? [y/N]: " response
+    fi
 
     if [[ "$response" =~ ^[Yy]$ ]]; then
         cd ecr
@@ -108,7 +123,14 @@ destroy_bootstrap() {
     warn "This will delete the Terraform state storage!"
     warn "⚠️  Only do this if you're completely cleaning up!"
     echo ""
-    read -p "Destroy bootstrap? [y/N]: " response
+
+    local response="n"
+    if [ "${AUTO_APPROVE:-false}" = "true" ]; then
+        warn "AUTO_APPROVE=true: Auto-destroying bootstrap"
+        response="y"
+    else
+        read -p "Destroy bootstrap? [y/N]: " response
+    fi
 
     if [[ "$response" =~ ^[Yy]$ ]]; then
         cd bootstrap
