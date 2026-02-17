@@ -49,3 +49,6 @@ Thumbs.db
 # Logs
 *.log
 deployment.log
+
+# Backup files
+*.bak
