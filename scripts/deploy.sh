@@ -208,39 +208,6 @@ wait_for_addon_health() {
     info "✅ All addons healthy"
 }
 
-deploy_applicationsets() {
-    local env=$1
-
-    section "Deploying ArgoCD ApplicationSets ($env)"
-
-    aws eks update-kubeconfig --name "myapp-$env" --region us-east-1 &> /dev/null
-
-    local appset_file="/Users/Eden/Desktop/projects/for-project-circle/helm-charts/argocd-apps/${env}-applicationset.yaml"
-
-    if [ ! -f "$appset_file" ]; then
-        warn "ApplicationSet file not found: $appset_file"
-        return
-    fi
-
-    # Check if already deployed (idempotency)
-    if kubectl get applicationset -n argocd "myapp-${env}-envs" &>/dev/null 2>&1 || \
-       kubectl get applicationset -n argocd "myapp-${env}" &>/dev/null 2>&1; then
-        info "ApplicationSet already exists, skipping..."
-        return
-    fi
-
-    info "Applying ApplicationSet for $env..."
-    kubectl apply -f "$appset_file" 2>/dev/null || warn "Failed to apply ApplicationSet"
-
-    info "Waiting for ArgoCD to create Applications..."
-    sleep 10
-
-    kubectl get applicationset -n argocd 2>/dev/null || true
-    kubectl get application -n argocd 2>/dev/null || true
-
-    info "✅ ApplicationSet deployed"
-}
-
 prompt_github_pat() {
     local env=$1
 
@@ -383,8 +350,6 @@ main() {
             wait_for_addon_health "dev"
             verify_cluster "dev"
             get_argocd_info "dev"
-            prompt_github_pat "dev"
-            deploy_applicationsets "dev"
             ;;
         prod)
             deploy_environment "prod"
@@ -393,8 +358,6 @@ main() {
             wait_for_addon_health "prod"
             verify_cluster "prod"
             get_argocd_info "prod"
-            prompt_github_pat "prod"
-            deploy_applicationsets "prod"
             ;;
         all)
             deploy_environment "dev"
@@ -419,12 +382,9 @@ main() {
             get_argocd_info "dev"
             get_argocd_info "prod"
 
-            # Configure GitHub PAT and deploy ApplicationSets
+            # Show GitHub PAT instructions if needed
             prompt_github_pat "dev"
             prompt_github_pat "prod"
-
-            deploy_applicationsets "dev"
-            deploy_applicationsets "prod"
             ;;
         *)
             error "Invalid environment: $environment"

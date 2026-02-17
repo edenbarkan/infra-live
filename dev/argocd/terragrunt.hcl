@@ -37,6 +37,7 @@ inputs = {
   environment                         = local.env.locals.environment
   namespaces                          = local.env.locals.namespaces
   helm_charts_repo_url                = "https://github.com/edenbarkan/helm-charts.git"
+  auto_sync                           = true
   domain                              = "argocd.dev.example.com"
   tags                                = local.env.locals.tags
 }

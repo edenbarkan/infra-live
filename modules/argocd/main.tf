@@ -167,15 +167,19 @@ resource "kubectl_manifest" "applicationset" {
             namespace = "{{namespace}}"
           }
 
-          syncPolicy = {
-            automated = {
-              prune    = true
-              selfHeal = true
-            }
-            syncOptions = [
-              "CreateNamespace=true"
-            ]
-          }
+          # Dev/staging: auto-sync (immediate deployment)
+          # Production: manual sync only (requires approval in ArgoCD UI)
+          syncPolicy = merge(
+            {
+              syncOptions = ["CreateNamespace=true"]
+            },
+            var.auto_sync ? {
+              automated = {
+                prune    = true
+                selfHeal = true
+              }
+            } : {}
+          )
         }
       }
     }

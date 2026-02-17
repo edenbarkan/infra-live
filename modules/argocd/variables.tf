@@ -18,6 +18,12 @@ variable "namespaces" {
   type        = list(string)
 }
 
+variable "auto_sync" {
+  description = "Enable automated sync for ArgoCD applications (disable for production)"
+  type        = bool
+  default     = true
+}
+
 variable "helm_charts_repo_url" {
   description = "Git repository URL containing Helm charts"
   type        = string
