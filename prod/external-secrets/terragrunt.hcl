@@ -17,6 +17,13 @@ dependency "eks" {
   mock_outputs_allowed_terraform_commands = ["destroy"]
 }
 
+dependency "aws_load_balancer_controller" {
+  config_path = "../aws-load-balancer-controller"
+
+  mock_outputs = {}
+  mock_outputs_allowed_terraform_commands = ["destroy"]
+}
+
 locals {
   env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
 }
