@@ -13,10 +13,10 @@ module "vpc" {
   public_subnets  = [cidrsubnet(var.vpc_cidr, 4, 0), cidrsubnet(var.vpc_cidr, 4, 1), cidrsubnet(var.vpc_cidr, 4, 2)]
   private_subnets = [cidrsubnet(var.vpc_cidr, 4, 4), cidrsubnet(var.vpc_cidr, 4, 5), cidrsubnet(var.vpc_cidr, 4, 6)]
 
-  # NAT Gateway: 1 for dev (cost saving), 1 per AZ for prod (HA)
+  # NAT Gateway: configurable via env.hcl (single = cost saving, per-AZ = HA)
   enable_nat_gateway     = true
-  single_nat_gateway     = var.environment == "dev"
-  one_nat_gateway_per_az = var.environment == "prod"
+  single_nat_gateway     = var.single_nat_gateway
+  one_nat_gateway_per_az = !var.single_nat_gateway
 
   enable_dns_hostnames = true
   enable_dns_support   = true

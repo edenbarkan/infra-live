@@ -35,5 +35,6 @@ inputs = {
   cluster_endpoint                    = dependency.eks.outputs.cluster_endpoint
   cluster_certificate_authority_data  = dependency.eks.outputs.cluster_certificate_authority_data
   environment                         = local.env.locals.environment
+  replica_count                       = local.env.locals.nginx_replica_count
   tags                                = local.env.locals.tags
 }

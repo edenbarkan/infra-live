@@ -54,8 +54,8 @@ resource "helm_release" "ingress_nginx" {
         }
       }
 
-      # Replicas: 2 for dev (cost), 3 for prod (HA)
-      replicaCount = var.environment == "prod" ? 3 : 2
+      # Replicas: configurable via env.hcl (dev: 1, prod: 2)
+      replicaCount = var.replica_count
     }
   })]
 }

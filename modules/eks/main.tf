@@ -69,10 +69,10 @@ module "eks" {
   # Application pods will run on Karpenter-managed nodes instead
   eks_managed_node_groups = {
     system = {
-      instance_types = ["t3.medium"]
-      min_size       = 2
-      max_size       = 3
-      desired_size   = 2
+      instance_types = var.system_node_instance_types
+      min_size       = var.system_node_min_size
+      max_size       = var.system_node_max_size
+      desired_size   = var.system_node_desired_size
       
       # Label these nodes for identification
       labels = {

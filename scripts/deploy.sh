@@ -259,11 +259,7 @@ prompt_github_pat() {
     echo "  kubectl -n argocd create secret generic github-token \\"
     echo "    --from-literal=token=YOUR_GITHUB_PAT"
     echo ""
-
-    read -p "Have you set the GitHub PAT? [y/N]: " response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        warn "Remember to set the GitHub PAT before applications can sync!"
-    fi
+    warn "Remember to set the GitHub PAT before applications can sync!"
 }
 
 verify_cluster() {

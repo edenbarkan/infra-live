@@ -34,6 +34,7 @@ inputs = {
   cluster_certificate_authority_data  = dependency.eks.outputs.cluster_certificate_authority_data
   instance_families                   = local.env.locals.karpenter_instance_families
   capacity_types                      = local.env.locals.karpenter_capacity_types
+  cpu_limit                           = local.env.locals.karpenter_cpu_limit
   environment                         = local.env.locals.environment
   tags                                = local.env.locals.tags
 }

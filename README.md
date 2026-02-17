@@ -30,10 +30,10 @@ graph TB
             DevNodes["Nodes:<br/>• System: 2×t3.medium<br/>• Karpenter: Spot ☁️"]
         end
 
-        subgraph ProdCluster["EKS Cluster: myapp-prod<br/>VPC: 10.1.0.0/16 | NAT: 3 (HA)"]
+        subgraph ProdCluster["EKS Cluster: myapp-prod<br/>VPC: 10.1.0.0/16 | NAT: 1"]
             ProdNS["Namespace:<br/>• production"]
             ProdInfra["Infrastructure:<br/>• ArgoCD<br/>• Karpenter<br/>• Ingress-NGINX<br/>• AWS LBC<br/>• External Secrets"]
-            ProdNodes["Nodes:<br/>• System: 2×t3.medium<br/>• Karpenter: On-demand"]
+            ProdNodes["Nodes:<br/>• System: 2×t3.medium<br/>• Karpenter: Spot + On-demand"]
         end
 
         subgraph Shared["Shared Resources"]
@@ -256,14 +256,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # → https://localhost:8080
 ```
 
-**Manual deployment (if needed):**
-```bash
-# Dev cluster
-kubectl apply -f ../helm-charts/argocd-apps/dev-applicationset.yaml
-
-# Prod cluster
-kubectl apply -f ../helm-charts/argocd-apps/prod-applicationset.yaml
-```
+**Note:** ApplicationSets are managed by the ArgoCD Terraform module in `modules/argocd/`. No manual `kubectl apply` is needed — they are deployed automatically with `terragrunt apply`.
 
 ---
 
@@ -394,12 +387,13 @@ git push
 | Environment | Control Plane | NAT | Nodes | **Total** |
 |-------------|--------------|-----|-------|-----------|
 | **Dev** | $73 | $32 | $60+ | **~$165/mo** |
-| **Prod** | $73 | $96 | $60+ | **~$229/mo** |
+| **Prod** | $73 | $32 | $60+ | **~$165/mo** |
 
 ### Cost Optimizations
-- ✅ **Spot instances** in dev (~70% savings)
+- ✅ **Spot instances** in both environments (~70% savings)
 - ✅ **Karpenter consolidation** (auto-removes underutilized nodes)
-- ✅ **Single NAT** in dev vs 3 in prod
+- ✅ **Single NAT Gateway** per VPC (cost saving)
+- ✅ **Karpenter CPU limit** capped at 20 vCPU (prevents runaway costs)
 - ✅ **ECR lifecycle policies** (auto-delete old images)
 
 ---
@@ -432,7 +426,7 @@ graph TD
 
 ### Q: Why separate EKS clusters for dev and prod?
 
-> **Blast radius containment** - Bad configs in dev can't affect prod. Also enables **cost optimization**: dev uses spot instances + 1 NAT gateway, while prod uses on-demand + 3 NAT gateways for HA.
+> **Blast radius containment** - Bad configs in dev can't affect prod. Also enables **independent scaling**: dev uses smaller instance families (t3/t3a/t2), while prod uses production-grade (m5/m6i/c5). Both use spot + on-demand with single NAT for cost optimization.
 
 ### Q: Why Karpenter instead of Cluster Autoscaler?
 

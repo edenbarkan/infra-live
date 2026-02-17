@@ -13,6 +13,12 @@ variable "environment" {
   type        = string
 }
 
+variable "single_nat_gateway" {
+  description = "Use a single NAT gateway (cost saving) vs one per AZ (HA)"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)

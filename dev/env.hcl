@@ -8,9 +8,22 @@ locals {
   eks_version  = "1.30"
   namespaces   = ["dev", "staging"]
 
+  # VPC
+  single_nat_gateway = true  # Cost saving (use false for HA with 1 NAT per AZ)
+
+  # EKS system nodes
+  system_node_instance_types = ["t3.medium"]
+  system_node_min_size       = 2
+  system_node_max_size       = 2
+  system_node_desired_size   = 2
+
   # Karpenter: spot instances for dev = ~70% cost savings
   karpenter_instance_families = ["t3", "m5"]
   karpenter_capacity_types    = ["spot"]
+  karpenter_cpu_limit         = "20"
+
+  # Ingress-NGINX
+  nginx_replica_count = 1  # Single replica sufficient for dev
 
   tags = { Environment = "dev" }
 }

@@ -39,7 +39,7 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 **Prod**: `10.1.0.0/16`
 - 3 Public Subnets
 - 3 Private Subnets
-- 3 NAT Gateways (high availability)
+- 1 NAT Gateway (cost optimization)
 - Internet Gateway
 
 ### 2. EKS Cluster
@@ -83,8 +83,8 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 
 **Prod Configuration**:
 - Instance families: m5, m6i, c5
-- Capacity type: On-demand (reliability)
-- CPU limit: 100 vCPUs
+- Capacity type: Spot + On-demand (cost optimized with fallback)
+- CPU limit: 20 vCPUs
 
 **NodePool**:
 - Consolidation policy: WhenUnderutilized
@@ -111,7 +111,7 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 
 **Configuration**:
 - Service type: NodePort (ALB connects to it)
-- Replicas: 2 (dev), 3 (prod)
+- Replicas: 1 (dev), 2 (prod)
 - Resources: 100m-500m CPU, 128Mi-512Mi memory
 - IngressClass: nginx
 
@@ -265,15 +265,15 @@ After idle period: Karpenter consolidates/terminates
 ### Compute
 
 - **Dev**: Spot instances via Karpenter (60% savings)
-- **Prod**: On-demand (reliability) with Savings Plans potential
+- **Prod**: Spot + On-demand (cost optimized with reliability fallback)
 - **System nodes**: Fixed 2×t3.medium (minimal baseline)
 - **Karpenter**: Automatic consolidation when underutilized
 
 ### Network
 
-- **Dev**: 1 NAT Gateway (~$35/month)
-- **Prod**: 3 NAT Gateways (~$105/month) for HA
-- Consider NAT instances for further savings
+- **Dev**: 1 NAT Gateway (~$32/month)
+- **Prod**: 1 NAT Gateway (~$32/month)
+- Both use single NAT for cost optimization
 
 ### Storage
 
@@ -281,9 +281,9 @@ After idle period: Karpenter consolidates/terminates
 - **S3**: Terraform state only (minimal cost)
 
 **Estimated Monthly Costs**:
-- Dev: ~$165 (with spot instances)
-- Prod: ~$229 (on-demand + 3 NAT)
-- Total: ~$394/month
+- Dev: ~$165 (spot instances, single NAT)
+- Prod: ~$165 (spot + on-demand, single NAT)
+- Total: ~$330/month
 
 ## Scalability
 
@@ -296,7 +296,7 @@ After idle period: Karpenter consolidates/terminates
 ### Limits
 
 - **Dev**: 20 vCPU limit (cost control)
-- **Prod**: 100 vCPU limit
+- **Prod**: 20 vCPU limit (cost control)
 - **Service quotas**: AWS account limits apply
 
 ## Disaster Recovery

@@ -126,7 +126,7 @@ resource "kubectl_manifest" "node_pool" {
       
       # Limits: prevent runaway scaling
       limits = {
-        cpu = var.environment == "prod" ? "100" : "20"  # Max CPU across all Karpenter nodes
+        cpu = var.cpu_limit  # Max CPU across all Karpenter nodes
       }
       
       # Disruption: when/how Karpenter can remove nodes

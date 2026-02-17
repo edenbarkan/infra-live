@@ -29,8 +29,14 @@ variable "capacity_types" {
   type        = list(string)
 }
 
+variable "cpu_limit" {
+  description = "Max vCPU Karpenter can provision (cost guardrail)"
+  type        = string
+  default     = "20"
+}
+
 variable "environment" {
-  description = "Environment name (dev/prod) - affects CPU limits"
+  description = "Environment name (dev/prod)"
   type        = string
 }
 
