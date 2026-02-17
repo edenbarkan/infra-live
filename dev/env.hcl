@@ -22,7 +22,7 @@ locals {
   karpenter_capacity_types    = ["spot"]
   karpenter_cpu_limit         = "20"
 
-  # Ingress-NGINX
+  # Ingress
   nginx_replica_count = 1  # Single replica sufficient for dev
 
   tags = { Environment = "dev" }

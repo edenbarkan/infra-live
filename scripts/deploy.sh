@@ -8,7 +8,7 @@
 #   - Karpenter for node autoscaling
 #   - ArgoCD for GitOps
 #   - AWS Load Balancer Controller
-#   - Ingress-NGINX for routing
+#   - Ingress stack (ALB + NGINX) for routing
 #   - External Secrets Operator
 #
 
@@ -132,7 +132,7 @@ cleanup_stale_locks() {
 
     section "Cleaning Up Stale State Locks ($env)"
 
-    local modules=("vpc" "eks" "karpenter" "aws-load-balancer-controller" "ingress-nginx" "external-secrets" "argocd")
+    local modules=("vpc" "eks" "karpenter" "aws-load-balancer-controller" "ingress" "external-secrets" "argocd")
 
     for module in "${modules[@]}"; do
         local lock_key="tfstate-${account_id}-us-east-1/${env}/${module}/terraform.tfstate"
@@ -162,7 +162,7 @@ deploy_environment() {
     echo "   • EKS Cluster (myapp-$env)"
     echo "   • Karpenter (node autoscaling)"
     echo "   • AWS Load Balancer Controller"
-    echo "   • Ingress-NGINX"
+    echo "   • Ingress (ALB + NGINX)"
     echo "   • External Secrets"
     echo "   • ArgoCD"
     echo ""
@@ -176,7 +176,7 @@ deploy_environment() {
 
     # Deploy all modules (Terragrunt figures out dependency order)
     # Dependencies defined in each module's terragrunt.hcl via 'dependency' blocks
-    # Order: VPC → EKS → [Karpenter, AWS LBC, External Secrets] → Ingress-NGINX → ArgoCD
+    # Order: VPC → EKS → [Karpenter, AWS LBC, External Secrets] → Ingress → ArgoCD
     # Terragrunt parallelizes independent modules (Karpenter, AWS LBC, External Secrets)
     # Using new terragrunt v0.99+ syntax
     terragrunt run --all --non-interactive -- apply

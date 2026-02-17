@@ -169,7 +169,7 @@ infra-live/
 │   ├── eks/                        Cluster
 │   ├── karpenter/                  Autoscaling
 │   ├── aws-load-balancer-controller/  ALB
-│   ├── ingress-nginx/              Routing
+│   ├── ingress/                    Routing (ALB + NGINX)
 │   ├── external-secrets/           Secrets
 │   ├── argocd/                     GitOps
 │   └── ecr/                        Registry
@@ -180,7 +180,7 @@ infra-live/
 │   ├── eks/
 │   ├── karpenter/
 │   ├── aws-load-balancer-controller/
-│   ├── ingress-nginx/
+│   ├── ingress/
 │   ├── external-secrets/
 │   └── argocd/
 │

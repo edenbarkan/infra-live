@@ -1,3 +1,15 @@
+# --- INGRESS STACK ---
+# This module deploys the full ingress pipeline:
+#
+#   Internet → ALB (ingressClassName: alb) → NGINX Controller (ingressClassName: nginx) → App Pods
+#
+# Two controllers process two different Ingress resources:
+#   1. AWS Load Balancer Controller  → watches "alb" class   → creates the ALB
+#   2. NGINX Ingress Controller      → watches "nginx" class  → routes to app services
+#
+# The ALB Ingress resource below creates the internet-facing load balancer.
+# App-level Ingress resources (in helm-charts repo) define per-app routing rules.
+
 resource "helm_release" "ingress_nginx" {
   namespace        = "ingress-nginx"
   create_namespace = true

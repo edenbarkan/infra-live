@@ -16,8 +16,8 @@ dependency "eks" {
   mock_outputs_allowed_terraform_commands = ["destroy"]
 }
 
-dependency "ingress_nginx" {
-  config_path = "../ingress-nginx"
+dependency "ingress" {
+  config_path = "../ingress"
 
   mock_outputs = {
     ingress_nginx_output = "mock-value"

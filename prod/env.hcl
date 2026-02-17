@@ -19,7 +19,7 @@ locals {
   karpenter_capacity_types    = ["spot", "on-demand"]
   karpenter_cpu_limit         = "20"
 
-  # Ingress-NGINX
+  # Ingress
   nginx_replica_count = 2  # HA: one per system node
 
   tags = { Environment = "prod" }

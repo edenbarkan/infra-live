@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../modules/ingress-nginx"
+  source = "../../modules/ingress"
 }
 
 dependency "eks" {
