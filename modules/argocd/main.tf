@@ -109,8 +109,8 @@ resource "kubectl_manifest" "argocd_project" {
         }
       ]
 
-      # Only allow namespace-scoped resources (no cluster-admin)
-      clusterResourceWhitelist = []
+      # Allow Namespace creation (needed for CreateNamespace=true sync option)
+      clusterResourceWhitelist = [{ group = "", kind = "Namespace" }]
 
       # All namespace-scoped resources allowed
       namespaceResourceWhitelist = [{ group = "*", kind = "*" }]
