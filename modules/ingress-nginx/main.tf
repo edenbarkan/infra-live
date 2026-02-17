@@ -59,3 +59,45 @@ resource "helm_release" "ingress_nginx" {
     }
   })]
 }
+
+# --- ALB INGRESS: Creates an internet-facing ALB that routes traffic to NGINX ---
+# AWS Load Balancer Controller watches for Ingress with ingressClassName: alb
+# and automatically provisions an ALB + Target Group
+# Traffic flow: Internet → ALB → NGINX (NodePort) → App Pods
+
+resource "kubernetes_ingress_v1" "alb_to_nginx" {
+  metadata {
+    name      = "alb-to-nginx"
+    namespace = "ingress-nginx"
+    annotations = {
+      "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"      = "instance"
+      "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTP = 80 }])
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
+      "alb.ingress.kubernetes.io/tags"             = "Environment=${var.environment},ManagedBy=terragrunt"
+    }
+  }
+
+  spec {
+    ingress_class_name = "alb"
+
+    rule {
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "ingress-nginx-controller"
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [helm_release.ingress_nginx]
+}
