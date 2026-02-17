@@ -589,7 +589,7 @@
                                     <div class="component-icon">☸️</div>
                                     <div class="component-name">EKS 1.30</div>
                                 </div>
-                                <div class="component" title="Karpenter - On-demand instances for reliability">
+                                <div class="component" title="Karpenter - Spot + On-demand instances for cost and reliability">
                                     <div class="component-icon">📈</div>
                                     <div class="component-name">Karpenter</div>
                                 </div>
@@ -666,27 +666,27 @@
                     <div class="gitops-stage">
                         <div class="stage-icon">👨‍💻</div>
                         <div class="stage-name">Developer</div>
-                        <div class="stage-details">Commits code to GitHub</div>
+                        <div class="stage-details">Push to develop or merge PR to main</div>
                     </div>
                     <div class="gitops-stage">
                         <div class="stage-icon">⚙️</div>
                         <div class="stage-name">CI Pipeline</div>
-                        <div class="stage-details">GitHub Actions builds & pushes to ECR</div>
+                        <div class="stage-details">Lint, test, build, Trivy scan, push to ECR</div>
                     </div>
                     <div class="gitops-stage">
                         <div class="stage-icon">📝</div>
                         <div class="stage-name">Update Manifests</div>
-                        <div class="stage-details">Updates helm-charts repo</div>
+                        <div class="stage-details">CI updates helm-charts overlay</div>
                     </div>
                     <div class="gitops-stage">
                         <div class="stage-icon">🔍</div>
                         <div class="stage-name">ArgoCD Sync</div>
-                        <div class="stage-details">Detects & deploys changes</div>
+                        <div class="stage-details">Auto-sync (dev/stg) or manual (prod)</div>
                     </div>
                     <div class="gitops-stage">
                         <div class="stage-icon">🚀</div>
                         <div class="stage-name">Live App</div>
-                        <div class="stage-details">Running in cluster</div>
+                        <div class="stage-details">Running in EKS cluster</div>
                     </div>
                 </div>
             </div>
@@ -694,53 +694,25 @@
             <div class="flow-diagram">
                 <div class="flow-title">📋 Detailed Deployment Stages</div>
                 <div class="flow-steps">
-                    <div class="flow-step">
-                        <div class="step-number">1</div>
+                    <div class="flow-step" style="border-left-color: #48bb78;">
+                        <div class="step-number" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">1</div>
                         <div class="step-content">
-                            <div class="step-title">Code Commit</div>
-                            <div class="step-description">Developer pushes code to GitHub (develop or main branch)</div>
+                            <div class="step-title">Dev: Push to <code>develop</code></div>
+                            <div class="step-description">Developer pushes to develop branch &rarr; CI runs lint (ESLint), test, build, Trivy scan &rarr; pushes image to ECR &rarr; updates helm-charts dev overlay &rarr; ArgoCD auto-syncs dev namespace</div>
                         </div>
                     </div>
-                    <div class="flow-step">
-                        <div class="step-number">2</div>
+                    <div class="flow-step" style="border-left-color: #ed8936;">
+                        <div class="step-number" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">2</div>
                         <div class="step-content">
-                            <div class="step-title">CI/CD Trigger</div>
-                            <div class="step-description">GitHub Actions workflow starts: build, test, security scan (Trivy)</div>
+                            <div class="step-title">Staging: Merge PR to <code>main</code></div>
+                            <div class="step-description">PR from develop &rarr; main is merged &rarr; CI runs same build pipeline on merge commit &rarr; pushes image to ECR &rarr; updates helm-charts staging overlay &rarr; ArgoCD auto-syncs staging namespace</div>
                         </div>
                     </div>
-                    <div class="flow-step">
-                        <div class="step-number">3</div>
+                    <div class="flow-step" style="border-left-color: #e53e3e;">
+                        <div class="step-number" style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);">3</div>
                         <div class="step-content">
-                            <div class="step-title">Container Build</div>
-                            <div class="step-description">Docker image built with git SHA tag and pushed to ECR</div>
-                        </div>
-                    </div>
-                    <div class="flow-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <div class="step-title">Manifest Update</div>
-                            <div class="step-description">CI updates helm-charts repo with new image tag (dev/staging/prod)</div>
-                        </div>
-                    </div>
-                    <div class="flow-step">
-                        <div class="step-number">5</div>
-                        <div class="step-content">
-                            <div class="step-title">ArgoCD Detection</div>
-                            <div class="step-description">ArgoCD detects Git change via ApplicationSet generation</div>
-                        </div>
-                    </div>
-                    <div class="flow-step">
-                        <div class="step-number">6</div>
-                        <div class="step-content">
-                            <div class="step-title">Automated Sync</div>
-                            <div class="step-description">Dev: Auto-sync | Staging: Auto-sync | Prod: Manual sync required (safety)</div>
-                        </div>
-                    </div>
-                    <div class="flow-step">
-                        <div class="step-number">7</div>
-                        <div class="step-content">
-                            <div class="step-title">Live Deployment</div>
-                            <div class="step-description">Application running with health checks, auto-scaling, and monitoring</div>
+                            <div class="step-title">Production: Manual Workflow Dispatch</div>
+                            <div class="step-description">Trigger "Promote to Production" workflow in GitHub Actions &rarr; CI updates helm-charts production overlay &rarr; manual sync required in ArgoCD UI (safety gate)</div>
                         </div>
                     </div>
                 </div>
@@ -833,7 +805,7 @@
                         <div class="step-number">3</div>
                         <div class="step-content">
                             <div class="step-title">Instance Selection</div>
-                            <div class="step-description">Chooses optimal instance type (Dev: Spot | Prod: On-demand)</div>
+                            <div class="step-description">Chooses optimal instance type (Dev: Spot | Prod: Spot + On-demand)</div>
                         </div>
                     </div>
                     <div class="arrow">⬇️</div>
@@ -992,7 +964,7 @@
                     <div class="flow-step">
                         <div class="step-content">
                             <div class="step-title">💰 Cost Optimized</div>
-                            <div class="step-description">Dev: ~$165/mo (spot instances) | Prod: ~$229/mo (on-demand) | Total: ~$394/mo</div>
+                            <div class="step-description">Dev: ~$165/mo (spot instances) | Prod: ~$165/mo (spot + on-demand) | Total: ~$330/mo</div>
                         </div>
                     </div>
                     <div class="flow-step">
