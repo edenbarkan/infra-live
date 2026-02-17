@@ -18,6 +18,11 @@ inputs = {
     untagged_days_to_keep = 7   # Delete untagged after 7 days
   }
 
+  # GitHub Actions OIDC role for CI/CD
+  github_actions_role_enabled = true
+  github_actions_role_name    = "GitHubActionsECRAccess"
+  github_org                  = "edenbarkan"
+
   tags = {
     Project   = "home-assignment"
     ManagedBy = "terragrunt"

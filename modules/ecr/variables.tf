@@ -27,6 +27,24 @@ variable "lifecycle_policy" {
   }
 }
 
+variable "github_actions_role_enabled" {
+  description = "Create IAM role for GitHub Actions OIDC"
+  type        = bool
+  default     = false
+}
+
+variable "github_actions_role_name" {
+  description = "Name of the IAM role for GitHub Actions"
+  type        = string
+  default     = "GitHubActionsECRAccess"
+}
+
+variable "github_org" {
+  description = "GitHub organization or user for OIDC trust"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
