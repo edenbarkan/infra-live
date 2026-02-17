@@ -173,17 +173,23 @@ spec:
 ### Application Deployment Flow
 
 ```
-1. Developer commits code
-   ↓
-2. GitHub Actions builds + pushes to ECR
-   ↓
-3. CI updates helm-charts repo with new image tag
-   ↓
-4. ArgoCD detects change
-   ↓
-5. Dev namespace: Auto-sync
-   Staging namespace: Manual promotion
-   Prod namespace: Manual sync in UI
+Developer pushes to develop
+  ↓
+GitHub Actions: Lint → Test → Build → Trivy scan → Push to ECR
+  ↓
+CI updates helm-charts dev overlay → ArgoCD auto-syncs dev
+
+Developer merges PR (develop → main)
+  ↓
+GitHub Actions: Build → Trivy scan → Push to ECR
+  ↓
+CI updates helm-charts staging overlay → ArgoCD auto-syncs staging
+
+Manual workflow dispatch (production)
+  ↓
+CI updates helm-charts production overlay
+  ↓
+Manual sync required in ArgoCD UI
 ```
 
 ### Traffic Flow

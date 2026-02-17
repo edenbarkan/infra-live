@@ -105,27 +105,30 @@ Detailed guides are available in the [`docs/`](docs/) directory:
 
 ```mermaid
 graph LR
-    A[Developer<br/>commits code] --> B[GitHub Actions<br/>Build & Test]
-    B --> C[Push to ECR<br/>myapp:abc1234]
-    C --> D[Update<br/>helm-charts repo]
-    D --> E[ArgoCD<br/>detects change]
-    E --> F[Deploy to<br/>Dev namespace]
-    F --> G{Manual<br/>Promotion}
-    G -->|Staging| H[Deploy to<br/>Staging]
-    G -->|Prod| I[Manual Sync<br/>in ArgoCD UI]
+    A[Developer<br/>commits code] --> B[Push to<br/>develop]
+    B --> C[GitHub Actions<br/>Lint, Test, Scan]
+    C --> D[Push to ECR<br/>myapp:abc1234]
+    D --> E[Update<br/>helm-charts]
+    E --> F[ArgoCD<br/>Dev auto-sync]
+    B --> G[PR merge<br/>to main]
+    G --> H[GitHub Actions<br/>Build & Scan]
+    H --> I[Update<br/>staging overlay]
+    I --> J[ArgoCD<br/>Staging auto-sync]
+    J --> K{Manual<br/>Promotion}
+    K -->|Prod| L[Manual Sync<br/>in ArgoCD UI]
 
     style A fill:#bbdefb
-    style C fill:#c8e6c9
+    style D fill:#c8e6c9
     style F fill:#fff9c4
-    style I fill:#ffccbc
+    style J fill:#ffe0b2
+    style L fill:#ffccbc
 ```
 
 **Flow Details:**
-1. Developer pushes to `develop` branch
-2. GitHub Actions: Build → Test → Security Scan → Push to ECR
-3. CI updates `helm-charts` repo with new image tag
-4. ArgoCD detects Git change and auto-syncs dev
-5. Manual promotion workflows for staging/prod
+1. Developer pushes to `develop` → CI builds, lints, scans, deploys to **dev**
+2. PR from `develop` → `main` → CI validates (lint, test, filesystem scan)
+3. Merge to `main` → CI builds, scans, deploys to **staging** (auto)
+4. Manual workflow dispatch → deploys to **production** (manual ArgoCD sync)
 
 ---
 
@@ -345,38 +348,30 @@ terragrunt force-unlock LOCK_ID
 
 ### GitHub Actions Workflow
 
-**Trigger:** Push to `develop` or `main` branch
+**Triggers:**
+- Push to `develop` → build + deploy to dev
+- Push to `main` (PR merge) → build + deploy to staging
+- PRs to `main`/`develop` → lint + test + filesystem scan (no deploy)
 
-**Flow:**
-1. GitHub Actions builds Docker image
-2. Pushes to ECR with git SHA tag
-3. Updates `helm-charts` repo with new image tag
-4. ArgoCD detects change and syncs:
-   - **Dev**: Auto-sync (immediate deployment)
-   - **Staging**: Manual git commit to promote
-   - **Prod**: Manual sync in ArgoCD UI (requires approval)
+**Pipeline steps:**
+1. Lint (ESLint) → Test → Build Docker image
+2. Trivy scan (blocks on HIGH/CRITICAL CVEs)
+3. Push to ECR with short SHA tag
+4. Update `helm-charts` repo overlay → ArgoCD auto-syncs
+
+**ArgoCD sync policy:**
+- **Dev**: Auto-sync on develop push
+- **Staging**: Auto-sync on main merge
+- **Prod**: Manual sync in ArgoCD UI (requires approval)
 
 **Setup:**
-1. GitHub Secrets configured:
-   - `AWS_ACCOUNT_ID`: AWS account
-   - `GH_PAT`: GitHub Personal Access Token
+1. GitHub Secrets: `AWS_ACCOUNT_ID`, `GH_PAT`
+2. OIDC role: `GitHubActionsECRAccess` (Terraform-managed in ECR module, scoped permissions)
 
-2. OIDC role created via ECR module:
-   - Role: `GitHubActionsECRAccess`
-   - Trust: GitHub Actions from your repo
-
-**Manual Promotion:**
+**Manual Promotion (Production only):**
 ```bash
-# Dev → Staging
-cd helm-charts
-yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/staging/values.yaml
-git commit -m "promote: myapp abc1234 to staging"
-git push
-
-# Staging → Prod
-yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/production/values.yaml
-git commit -m "promote: myapp abc1234 to production"
-git push
+# Use the GitHub Actions workflow_dispatch:
+# Actions → "Promote to Production" → enter image tag
 # Then manually sync in ArgoCD UI
 ```
 
@@ -459,7 +454,7 @@ graph TD
 | **Secrets** | AWS Secrets Manager + External Secrets Operator |
 | **Network** | Private subnets for nodes, public for ALB only |
 | **Container** | Non-root, read-only filesystem, dropped capabilities |
-| **Scanning** | ECR scans for CVEs on push |
+| **Scanning** | Trivy in CI (blocks build) + ECR scan on push |
 | **State** | S3 with encryption + DynamoDB locking |
 
 ---

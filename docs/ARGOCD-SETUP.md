@@ -73,53 +73,51 @@ Creates 1 application: `myapp-production`
 
 ## GitOps Workflow
 
-### 1. Developer Workflow
+### 1. Developer Workflow (Dev)
 
 ```bash
-# 1. Make changes to application
+# 1. Work on develop branch
 cd app-source
-git checkout -b feature/new-feature
+git checkout develop
 # ... make changes ...
 git commit -m "feat: add new feature"
-git push origin feature/new-feature
+git push origin develop
 
-# 2. Create PR and merge to main
-# GitHub Actions automatically:
-# - Builds Docker image
-# - Pushes to ECR as myapp:abc1234
-# - Updates helm-charts repo with new tag
+# 2. GitHub Actions automatically:
+#    - Lints (ESLint), tests, builds Docker image
+#    - Scans with Trivy (blocks on HIGH/CRITICAL CVEs)
+#    - Pushes to ECR as myapp:abc1234
+#    - Updates helm-charts dev overlay
 
-# 3. ArgoCD detects change and syncs
-# - Dev: Auto-deploys immediately
-# - Staging: Requires manual promotion
-# - Prod: Requires manual sync in UI
+# 3. ArgoCD auto-syncs dev namespace
 ```
 
-### 2. Promoting to Staging
+### 2. Promoting to Staging (Automatic)
 
 ```bash
-cd helm-charts
-git pull
+# 1. Create PR from develop → main
+gh pr create --base main --head develop
 
-# Update staging values
-yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/staging/values.yaml
+# 2. PR checks run (lint, test, filesystem scan)
 
-git commit -m "promote: myapp abc1234 to staging"
-git push
+# 3. Merge the PR
+gh pr merge --merge
 
-# ArgoCD auto-syncs staging namespace
+# 4. GitHub Actions automatically:
+#    - Builds and scans the main merge commit
+#    - Updates helm-charts staging overlay
+#    - ArgoCD auto-syncs staging namespace
 ```
 
-### 3. Promoting to Production
+> A manual fallback workflow (`promote-staging.yaml`) exists for hotfixes.
+
+### 3. Promoting to Production (Manual)
 
 ```bash
-cd helm-charts
-
-# Update production values
-yq e '.image.tag = "abc1234"' -i apps/myapp/overlays/production/values.yaml
-
-git commit -m "promote: myapp abc1234 to production"
-git push
+# Use the GitHub Actions workflow:
+# 1. Go to Actions → "Promote to Production"
+# 2. Enter the image tag
+# 3. CI updates helm-charts production overlay
 
 # Manual sync required in ArgoCD UI:
 # 1. Open ArgoCD UI
