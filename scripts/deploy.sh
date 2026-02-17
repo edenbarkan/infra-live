@@ -125,6 +125,33 @@ deploy_ecr() {
     info "✅ ECR complete"
 }
 
+cleanup_stale_locks() {
+    local env=$1
+    local account_id=$(aws sts get-caller-identity --query Account --output text)
+    local table_name="terraform-locks-${account_id}"
+
+    section "Cleaning Up Stale State Locks ($env)"
+
+    local modules=("vpc" "eks" "karpenter" "aws-load-balancer-controller" "ingress-nginx" "external-secrets" "argocd")
+
+    for module in "${modules[@]}"; do
+        local lock_key="tfstate-${account_id}-us-east-1/${env}/${module}/terraform.tfstate"
+        local lock_id=$(aws dynamodb get-item \
+            --table-name "$table_name" \
+            --key "{\"LockID\": {\"S\": \"${lock_key}\"}}" \
+            --query 'Item.Info.S' --output text 2>/dev/null || echo "NONE")
+
+        if [ "$lock_id" != "NONE" ] && [ "$lock_id" != "None" ]; then
+            warn "Removing stale lock for ${env}/${module}..."
+            aws dynamodb delete-item \
+                --table-name "$table_name" \
+                --key "{\"LockID\": {\"S\": \"${lock_key}\"}}" 2>/dev/null || true
+        fi
+    done
+
+    info "✅ Stale locks cleaned up"
+}
+
 deploy_environment() {
     local env=$1
 
@@ -141,6 +168,9 @@ deploy_environment() {
     echo ""
     warn "Estimated time: 30-40 minutes"
     echo ""
+
+    # Clean up any stale locks from previous failed runs
+    cleanup_stale_locks "$env"
 
     cd "$env"
 

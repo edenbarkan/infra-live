@@ -10,7 +10,7 @@ terraform {
 
 inputs = {
   repository_name      = "myapp"
-  image_tag_mutability = "IMMUTABLE"  # Tags can't be overwritten (safer)
+  image_tag_mutability = "MUTABLE"    # Branch tags (develop, main) are updated on each CI push
   scan_on_push         = true         # Scan for CVEs automatically
   
   lifecycle_policy = {
