@@ -27,13 +27,11 @@ variable "auto_sync" {
 variable "helm_charts_repo_url" {
   description = "Git repository URL containing Helm charts"
   type        = string
-  default     = "https://github.com/your-org/helm-charts.git"
 }
 
 variable "domain" {
   description = "Domain for ArgoCD UI (e.g., argocd.dev.example.com)"
   type        = string
-  default     = "localhost"
 }
 
 variable "tags" {

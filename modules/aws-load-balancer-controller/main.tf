@@ -35,12 +35,6 @@ resource "aws_eks_pod_identity_association" "lbc" {
   role_arn        = aws_iam_role.lbc.arn
 }
 
-# Migrate IAM role from IRSA module to direct resource (remove after first apply)
-moved {
-  from = module.lb_controller_irsa.aws_iam_role.this[0]
-  to   = aws_iam_role.lbc
-}
-
 # --- AWS LOAD BALANCER CONTROLLER HELM CHART ---
 
 resource "helm_release" "aws_lbc" {

@@ -60,12 +60,6 @@ resource "aws_eks_pod_identity_association" "eso" {
   role_arn        = aws_iam_role.eso.arn
 }
 
-# Migrate IAM role from IRSA module to direct resource (remove after first apply)
-moved {
-  from = module.eso_irsa.aws_iam_role.this[0]
-  to   = aws_iam_role.eso
-}
-
 # --- EXTERNAL SECRETS OPERATOR HELM CHART ---
 
 resource "helm_release" "external_secrets" {

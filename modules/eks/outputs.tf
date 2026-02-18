@@ -19,7 +19,7 @@ output "cluster_security_group_id" {
 }
 
 output "oidc_provider_arn" {
-  description = "ARN of the OIDC Provider for IRSA"
+  description = "ARN of the OIDC Provider (retained for compatibility; Pod Identity is primary)"
   value       = module.eks.oidc_provider_arn
 }
 
