@@ -18,8 +18,8 @@ variable "scan_on_push" {
 variable "lifecycle_policy" {
   description = "Lifecycle policy rules"
   type = object({
-    max_image_count        = number
-    untagged_days_to_keep  = number
+    max_image_count       = number
+    untagged_days_to_keep = number
   })
   default = {
     max_image_count       = 20

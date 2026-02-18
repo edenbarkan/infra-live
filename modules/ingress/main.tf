@@ -29,7 +29,7 @@ resource "helm_release" "ingress_nginx" {
       ingressClassResource = {
         name    = "nginx"
         enabled = true
-        default = false  # Apps must explicitly specify ingressClassName: nginx
+        default = false # Apps must explicitly specify ingressClassName: nginx
       }
 
       # Trust X-Forwarded headers from ALB
@@ -43,7 +43,7 @@ resource "helm_release" "ingress_nginx" {
       metrics = {
         enabled = true
         serviceMonitor = {
-          enabled = false  # Set true if you have Prometheus
+          enabled = false # Set true if you have Prometheus
         }
       }
 
@@ -82,7 +82,7 @@ resource "kubernetes_ingress_v1" "alb_to_nginx" {
     name      = "alb-to-nginx"
     namespace = "ingress-nginx"
     annotations = {
-      "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
+      "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
       "alb.ingress.kubernetes.io/target-type"      = "instance"
       "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTP = 80 }])
       "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"

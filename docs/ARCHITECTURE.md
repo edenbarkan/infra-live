@@ -57,10 +57,10 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 - EKS Pod Identity Agent (IAM role assumption)
 
 **Node Groups**:
-- **System nodes**: 2×t3.medium (for critical addons)
-  - Tainted with `CriticalAddonsOnly:NoSchedule`
-  - Tolerations configured for system components
-- **Karpenter nodes**: Auto-scaled based on workload
+- **System nodes**: 2×t3.medium (fixed, always running)
+  - No taints (allows all pods to schedule immediately after cluster creation)
+  - Infrastructure addons (Karpenter, NGINX, ArgoCD) have tolerations for `CriticalAddonsOnly` in case taints are added later
+- **Karpenter nodes**: Auto-scaled based on workload (0 to 20 vCPU limit)
 
 **Endpoint Access**:
 - Public + Private (allows deployment from anywhere)

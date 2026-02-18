@@ -40,7 +40,7 @@ module "eks" {
     # VPC-CNI: Gives pods real VPC IP addresses
     vpc-cni = {
       most_recent    = true
-      before_compute = true  # Must be ready before nodes join
+      before_compute = true # Must be ready before nodes join
 
       # Enable prefix delegation: more IPs per node
       # Without this: max ~10-30 pods per node
@@ -73,7 +73,7 @@ module "eks" {
       min_size       = var.system_node_min_size
       max_size       = var.system_node_max_size
       desired_size   = var.system_node_desired_size
-      
+
       # Label these nodes for identification
       labels = {
         "node-role" = "system"

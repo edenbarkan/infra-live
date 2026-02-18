@@ -54,8 +54,8 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
 # If someone else is already applying, you'll see: "Error locking state"
 resource "aws_dynamodb_table" "terraform_locks" {
   name         = var.lock_table_name
-  billing_mode = "PAY_PER_REQUEST"    # No capacity planning needed
-  hash_key     = "LockID"             # Required by Terraform — don't change
+  billing_mode = "PAY_PER_REQUEST" # No capacity planning needed
+  hash_key     = "LockID"          # Required by Terraform — don't change
 
   attribute {
     name = "LockID"

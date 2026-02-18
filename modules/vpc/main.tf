@@ -23,11 +23,11 @@ module "vpc" {
 
   # These tags tell AWS LBC and Karpenter which subnets to use
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = 1                          # ALB uses these
+    "kubernetes.io/role/elb" = 1 # ALB uses these
   }
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
-    "karpenter.sh/discovery"          = var.cluster_name  # Karpenter finds subnets by this tag
+    "karpenter.sh/discovery"          = var.cluster_name # Karpenter finds subnets by this tag
   }
 
   tags = var.tags
