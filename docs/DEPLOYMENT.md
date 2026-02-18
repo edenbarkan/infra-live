@@ -174,10 +174,10 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
 
 ## Cost Optimization
 
-- **Dev**: Uses spot instances via Karpenter (~60% cost savings)
-- **Prod**: Uses on-demand for reliability
-- Karpenter automatically scales nodes based on workload
-- Consider using Savings Plans or Reserved Instances for production
+- **Dev**: Spot instances only via Karpenter (~70% cost savings)
+- **Prod**: Spot + On-demand fallback (cost optimized with reliability)
+- Karpenter automatically scales nodes based on workload (0 to 20 vCPU limit)
+- No TLS configured by default; add ACM certificate to ALB for HTTPS
 
 ## Next Steps
 

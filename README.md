@@ -139,7 +139,7 @@ graph LR
 ```mermaid
 graph TD
     A[🌍 Internet<br/>User Request] --> B[🔀 Route53<br/>DNS Resolution]
-    B --> C[⚖️ ALB<br/>TLS Termination]
+    B --> C[⚖️ ALB<br/>Load Balancing]
     C --> D[🔧 Ingress-NGINX<br/>Path/Host Routing]
     D --> E[📦 App Service<br/>ClusterIP]
     E --> F[🐳 App Pods<br/>Karpenter Nodes]
@@ -423,7 +423,7 @@ graph TD
 
 ### Q: Why separate EKS clusters for dev and prod?
 
-> **Blast radius containment** - Bad configs in dev can't affect prod. Also enables **independent scaling**: dev uses smaller instance families (t3/t3a/t2), while prod uses production-grade (m5/m6i/c5). Both use spot + on-demand with single NAT for cost optimization.
+> **Blast radius containment** - Bad configs in dev can't affect prod. Also enables **independent scaling**: dev uses cost-efficient instance families (t3/m5) with spot-only, while prod uses production-grade (m5/m6i/c5) with spot + on-demand fallback. Single NAT per VPC for cost optimization.
 
 ### Q: Why Karpenter instead of Cluster Autoscaler?
 
@@ -434,9 +434,9 @@ graph TD
 
 ### Q: Explain the traffic flow from internet to app.
 
-> **Internet → Route53 (DNS) → ALB (TLS termination) → Ingress-NGINX (routing) → Service → Pods**
+> **Internet → Route53 (DNS) → ALB (HTTP) → Ingress-NGINX (routing) → Service → Pods**
 >
-> ALB handles AWS-specific features (security groups, target groups), while NGINX provides flexible routing (path/host rules).
+> ALB handles AWS-native load balancing (security groups, target groups). NGINX provides flexible routing (path/host rules). TLS termination can be added via ACM certificate on the ALB.
 
 ### Q: How are secrets managed?
 

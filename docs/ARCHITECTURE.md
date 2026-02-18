@@ -77,13 +77,13 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 - EventBridge rules (spot termination warnings)
 
 **Dev Configuration**:
-- Instance families: t3, t3a, t2
-- Capacity type: Spot (60% cost savings)
+- Instance families: t3, m5
+- Capacity type: Spot only (~70% cost savings)
 - CPU limit: 20 vCPUs
 
 **Prod Configuration**:
 - Instance families: m5, m6i, c5
-- Capacity type: Spot + On-demand (cost optimized with fallback)
+- Capacity type: Spot + On-demand fallback
 - CPU limit: 20 vCPUs
 
 **NodePool**:
@@ -103,11 +103,11 @@ Detailed architecture and component breakdown for the EKS infrastructure.
 - Creates ALB for Ingress resources
 - Manages target groups
 - Integrates with AWS WAF
-- Supports SSL/TLS termination
+- Supports SSL/TLS termination (via ACM certificate, not currently configured)
 
 ### 5. Ingress-NGINX
 
-**Purpose**: HTTP/HTTPS routing inside cluster
+**Purpose**: HTTP routing inside cluster
 
 **Configuration**:
 - Service type: NodePort (ALB connects to it)
@@ -272,8 +272,8 @@ After idle period: Karpenter consolidates/terminates
 
 ### Compute
 
-- **Dev**: Spot instances via Karpenter (60% savings)
-- **Prod**: Spot + On-demand (cost optimized with reliability fallback)
+- **Dev**: Spot instances only via Karpenter (~70% savings)
+- **Prod**: Spot + On-demand fallback (cost optimized with reliability)
 - **System nodes**: Fixed 2×t3.medium (minimal baseline)
 - **Karpenter**: Automatic consolidation when underutilized
 

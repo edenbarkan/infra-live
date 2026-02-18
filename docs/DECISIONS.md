@@ -26,9 +26,9 @@ Key design decisions and their rationale for this EKS platform.
 
 ## 3. ALB + Ingress-NGINX (Dual Ingress)
 
-**Decision**: AWS ALB handles external traffic and TLS termination. Ingress-NGINX handles internal path/host-based routing.
+**Decision**: AWS ALB handles external traffic and load balancing. Ingress-NGINX handles internal path/host-based routing.
 
-**Rationale**: ALB provides native AWS integration: WAF, security groups, target groups, ACM certificates. NGINX provides flexible application-level routing (regex paths, canary, rate limiting) that ALB Ingress annotations cannot match. The dual pattern is standard in production EKS deployments.
+**Rationale**: ALB provides native AWS integration: security groups, target groups, and readiness for WAF/ACM when needed. NGINX provides flexible application-level routing (regex paths, canary, rate limiting) that ALB Ingress annotations cannot match. The dual pattern is standard in production EKS deployments. TLS termination can be added by attaching an ACM certificate to the ALB.
 
 **Trade-off**: Two ingress components to manage instead of one. Justified by the clean separation of concerns between AWS-layer and application-layer routing.
 
