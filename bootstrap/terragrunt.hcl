@@ -2,6 +2,11 @@
 # Run once: cd bootstrap && terragrunt apply
 # After this, all other modules use the S3 backend.
 
+locals {
+  account_id = get_aws_account_id()
+  region     = "us-east-1"
+}
+
 terraform {
   source = "../modules/tfstate-backend"
 }
@@ -24,12 +29,12 @@ generate "provider" {
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
 provider "aws" {
-  region = "us-east-1"
+  region = "${local.region}"
 }
 EOF
 }
 
 inputs = {
-  state_bucket_name = "tfstate-471448382412-us-east-1"
-  lock_table_name   = "terraform-locks-471448382412"
+  state_bucket_name = "tfstate-${local.account_id}-${local.region}"
+  lock_table_name   = "terraform-locks-${local.account_id}"
 }

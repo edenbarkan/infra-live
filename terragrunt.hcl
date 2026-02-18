@@ -2,6 +2,10 @@
 # Every child terragrunt.hcl inherits this automatically.
 
 locals {
+  # Dynamically resolve AWS account ID — no hardcoded values needed
+  account_id = get_aws_account_id()
+  region     = "us-east-1"
+
   # Try to read env.hcl, but don't fail if it doesn't exist (e.g., for ECR and bootstrap modules)
   # Using try() to safely handle missing env.hcl files
   env = try(read_terragrunt_config(find_in_parent_folders("env.hcl")), null)
@@ -14,11 +18,11 @@ remote_state {
     if_exists = "overwrite_terragrunt"
   }
   config = {
-    bucket         = "tfstate-471448382412-us-east-1"
+    bucket         = "tfstate-${local.account_id}-${local.region}"
     key            = "${path_relative_to_include()}/terraform.tfstate"  # Auto-unique per module
-    region         = "us-east-1"
+    region         = local.region
     encrypt        = true
-    dynamodb_table = "terraform-locks-471448382412"     # Prevents concurrent applies
+    dynamodb_table = "terraform-locks-${local.account_id}"             # Prevents concurrent applies
   }
 }
 
@@ -45,7 +49,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "${local.region}"
 
   default_tags {
     tags = {

@@ -1,0 +1,33 @@
+name: Validate Infrastructure
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Terraform Format & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive modules/
+
+      - name: Validate HCL syntax
+        run: |
+          # Install Terragrunt
+          curl -sL https://github.com/gruntwork-io/terragrunt/releases/download/v0.67.16/terragrunt_linux_amd64 -o /usr/local/bin/terragrunt
+          chmod +x /usr/local/bin/terragrunt
+
+          # Format check all .hcl files
+          terragrunt hclfmt --check

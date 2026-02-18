@@ -1,3 +1,5 @@
+> **Multi-Repo DevOps Project** | [project-overview](https://github.com/edenbarkan/project-overview) | [helm-charts](https://github.com/edenbarkan/helm-charts) | [app-source](https://github.com/edenbarkan/app-source) | **infra-live** (you are here)
+
 # 🚀 Infrastructure Live - Production EKS on AWS
 
 > **Best Practices** | **GitOps Ready** | **Cost Optimized** | **Interview Ready**
@@ -474,9 +476,12 @@ graph TD
 
 ## 📚 Related Repositories
 
-1. **[infra-live](.)** (this repo) - Terraform/Terragrunt infrastructure
-2. **[helm-charts](../helm-charts)** - Generic Helm chart + app configs
-3. **[app-source](../app-source)** - Application code + CI/CD
+| Repository | Purpose | Link |
+|------------|---------|------|
+| **infra-live** (this repo) | Terraform/Terragrunt infrastructure | You are here |
+| **helm-charts** | Generic Helm chart + environment overlays | [edenbarkan/helm-charts](https://github.com/edenbarkan/helm-charts) |
+| **app-source** | Application code + CI/CD pipelines | [edenbarkan/app-source](https://github.com/edenbarkan/app-source) |
+| **project-overview** | Architecture overview + entry point | [edenbarkan/project-overview](https://github.com/edenbarkan/project-overview) |
 
 ---
 
