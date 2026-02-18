@@ -124,19 +124,26 @@ kubectl logs -n karpenter deployment/karpenter | grep -i assume
 
 ## AWS Load Balancer Controller with Pod Identity
 
-Similar setup:
-
 ```hcl
 # modules/aws-load-balancer-controller/main.tf
-module "lb_controller_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
+resource "aws_iam_role" "lbc" {
+  name = "${var.cluster_name}-aws-lbc"
 
-  enable_pod_identity             = true
-  create_pod_identity_association = true
-  namespace                       = "kube-system"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "pods.eks.amazonaws.com" }
+      Action    = ["sts:AssumeRole", "sts:TagSession"]
+    }]
+  })
+}
 
-  # Rest of configuration...
+resource "aws_eks_pod_identity_association" "lbc" {
+  cluster_name    = var.cluster_name
+  namespace       = "kube-system"
+  service_account = "aws-load-balancer-controller"
+  role_arn        = aws_iam_role.lbc.arn
 }
 ```
 

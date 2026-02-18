@@ -8,14 +8,9 @@ variable "cluster_endpoint" {
   type        = string
 }
 
-variable "oidc_provider_arn" {
-  description = "OIDC provider ARN for IRSA"
-  type        = string
-}
-
-variable "environment" {
-  description = "Environment (dev/prod) - limits which secrets can be accessed"
-  type        = string
+variable "secret_prefixes" {
+  description = "List of secret path prefixes this cluster can access (e.g. [\"dev\", \"staging\"])"
+  type        = list(string)
 }
 
 variable "region" {

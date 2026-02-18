@@ -8,11 +8,6 @@ variable "cluster_endpoint" {
   type        = string
 }
 
-variable "oidc_provider_arn" {
-  description = "OIDC provider ARN for IRSA"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "VPC ID where ALBs will be created"
   type        = string

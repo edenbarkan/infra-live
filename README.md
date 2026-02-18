@@ -438,11 +438,11 @@ graph TD
 
 ### Q: How are secrets managed?
 
-> **External Secrets Operator** syncs from **AWS Secrets Manager**. Secrets never touch Git. Path-based isolation (`dev/*` and `prod/*`) with IAM policies ensures dev can only read dev secrets.
+> **External Secrets Operator** syncs from **AWS Secrets Manager** via ClusterSecretStore. Secrets never touch Git. Path-based isolation (`dev/*`, `staging/*`, `production/*`) with IAM policies ensures each cluster can only read its own secrets. App pods consume secrets via `envFrom` (auto-wired by the generic helm chart when `externalSecret.enabled: true`).
 
-### Q: What is IRSA and why use it?
+### Q: What is Pod Identity and why use it?
 
-> **IAM Roles for Service Accounts** - Uses OIDC to map K8s ServiceAccounts to specific IAM roles. Each pod gets exactly the permissions it needs, unlike EC2 instance roles which grant the same permissions to all pods on a node.
+> **EKS Pod Identity** is the modern, AWS-managed replacement for IRSA. It maps K8s ServiceAccounts to IAM roles via a direct AWS API (no OIDC provider needed). Each pod gets exactly the permissions it needs. All components (Karpenter, AWS LBC, External Secrets) use Pod Identity for consistent, keyless authentication.
 
 ---
 
@@ -450,7 +450,7 @@ graph TD
 
 | Feature | Implementation |
 |---------|---------------|
-| **IRSA** | Karpenter, AWS LBC, External Secrets use IRSA |
+| **Pod Identity** | Karpenter, AWS LBC, External Secrets use EKS Pod Identity |
 | **Secrets** | AWS Secrets Manager + External Secrets Operator |
 | **Network** | Private subnets for nodes, public for ALB only |
 | **Container** | Non-root, read-only filesystem, dropped capabilities |

@@ -1,10 +1,10 @@
 # --- IAM POLICY: Limit access to environment-specific secrets ---
-# Dev can only read secrets under "dev/*" prefix
-# Prod can only read secrets under "prod/*" prefix
+# Each cluster can only read secrets matching its namespace prefixes
+# Dev cluster: dev/*, staging/*    Prod cluster: production/*
 
 resource "aws_iam_policy" "eso" {
   name        = "${var.cluster_name}-eso"
-  description = "Allow External Secrets to read from Secrets Manager (${var.environment} only)"
+  description = "Allow External Secrets to read from Secrets Manager (${join(", ", var.secret_prefixes)} prefixes)"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -15,8 +15,7 @@ resource "aws_iam_policy" "eso" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        # Only allow reading secrets with this environment's prefix
-        Resource = "arn:aws:secretsmanager:${var.region}:*:secret:${var.environment}/*"
+        Resource = [for prefix in var.secret_prefixes : "arn:aws:secretsmanager:${var.region}:*:secret:${prefix}/*"]
       },
       {
         Effect = "Allow"
@@ -31,26 +30,40 @@ resource "aws_iam_policy" "eso" {
   tags = var.tags
 }
 
-# --- IRSA: IAM Role for Service Account ---
+# --- POD IDENTITY: IAM Role for ESO ---
+# Pod Identity replaces IRSA — no OIDC provider needed, credentials injected directly
 
-module "eso_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
+resource "aws_iam_role" "eso" {
+  name = "${var.cluster_name}-external-secrets"
 
-  role_name = "${var.cluster_name}-external-secrets"
-
-  oidc_providers = {
-    main = {
-      provider_arn               = var.oidc_provider_arn
-      namespace_service_accounts = ["external-secrets:external-secrets"]
-    }
-  }
-
-  role_policy_arns = {
-    policy = aws_iam_policy.eso.arn
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "pods.eks.amazonaws.com" }
+      Action    = ["sts:AssumeRole", "sts:TagSession"]
+    }]
+  })
 
   tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "eso" {
+  role       = aws_iam_role.eso.name
+  policy_arn = aws_iam_policy.eso.arn
+}
+
+resource "aws_eks_pod_identity_association" "eso" {
+  cluster_name    = var.cluster_name
+  namespace       = "external-secrets"
+  service_account = "external-secrets"
+  role_arn        = aws_iam_role.eso.arn
+}
+
+# Migrate IAM role from IRSA module to direct resource (remove after first apply)
+moved {
+  from = module.eso_irsa.aws_iam_role.this[0]
+  to   = aws_iam_role.eso
 }
 
 # --- EXTERNAL SECRETS OPERATOR HELM CHART ---
@@ -62,11 +75,6 @@ resource "helm_release" "external_secrets" {
   repository       = "https://charts.external-secrets.io"
   chart            = "external-secrets"
   version          = "0.9.13"
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.eso_irsa.iam_role_arn
-  }
 
   # Run on system nodes
   set {
@@ -83,9 +91,13 @@ resource "helm_release" "external_secrets" {
     name  = "tolerations[0].effect"
     value = "NoSchedule"
   }
+
+  depends_on = [aws_eks_pod_identity_association.eso]
 }
 
 # --- CLUSTERSECRETSTORE: Default store pointing to AWS Secrets Manager ---
+# With Pod Identity, no auth config needed — credentials are injected directly
+# into the ESO pod via AWS_CONTAINER_CREDENTIALS_FULL_URI
 
 resource "kubectl_manifest" "cluster_secret_store" {
   yaml_body = yamlencode({
@@ -97,18 +109,10 @@ resource "kubectl_manifest" "cluster_secret_store" {
         aws = {
           service = "SecretsManager"
           region  = var.region
-          auth = {
-            jwt = {
-              serviceAccountRef = {
-                name      = "external-secrets"
-                namespace = "external-secrets"
-              }
-            }
-          }
         }
       }
     }
   })
 
-  depends_on = [helm_release.external_secrets]
+  depends_on = [helm_release.external_secrets, aws_eks_pod_identity_association.eso]
 }

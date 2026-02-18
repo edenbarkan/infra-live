@@ -246,9 +246,11 @@ After idle period: Karpenter consolidates/terminates
 
 ### Secret Management
 
-- **External Secrets Operator**: Syncs from AWS Secrets Manager
-- **No secrets in Git**: Applications reference secrets by name
-- **Rotation**: Update in Secrets Manager, External Secrets syncs
+- **External Secrets Operator**: Syncs from AWS Secrets Manager to K8s Secrets
+- **End-to-end flow**: AWS Secrets Manager → ESO (ClusterSecretStore) → ExternalSecret → K8s Secret → Pod envFrom
+- **No secrets in Git**: Applications reference secrets by name in helm overlays
+- **IAM isolation**: Dev cluster can only read `dev/*` and `staging/*` secrets; prod can only read `production/*`
+- **Rotation**: Update in Secrets Manager, ESO syncs on `refreshInterval` (1h), restart pods to pick up new values
 
 ## State Management
 
