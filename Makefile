@@ -1,4 +1,4 @@
-.PHONY: help fmt validate lint deploy-dev deploy-prod deploy-all destroy-dev destroy-all clean
+.PHONY: help fmt validate lint deploy-dev deploy-prod deploy-all destroy-dev destroy-all clean update-hosts argocd-creds
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -33,3 +33,9 @@ clean: ## Remove Terragrunt caches (preserves bootstrap local state)
 	rm -rf prod/*/.terraform prod/*/.terragrunt-cache
 	rm -rf ecr/.terraform ecr/.terragrunt-cache
 	@echo "Caches cleaned"
+
+update-hosts: ## Update /etc/hosts with ALB IPs for browser access
+	sudo ./scripts/update-hosts.sh
+
+argocd-creds: ## Show ArgoCD credentials for running clusters
+	./scripts/argocd-credentials.sh
