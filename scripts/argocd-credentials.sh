@@ -9,62 +9,77 @@ set -euo pipefail
 
 # Cluster name -> ArgoCD URL mapping
 declare -A ARGOCD_URLS=(
-  [myapp-dev]="http://argocd.dev.example.com"
-  [myapp-prod]="http://argocd.prod.example.com"
+    [myapp-dev]="http://argocd.dev.example.com"
+    [myapp-prod]="http://argocd.prod.example.com"
 )
 
 # Colors
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
 RED='\033[0;31m'
-YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
-info()    { echo -e "${GREEN}[✓]${NC} $1"; }
-warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
-err()     { echo -e "${RED}[✗]${NC} $1" >&2; }
-section() { echo -e "\n${CYAN}=== $1 ===${NC}"; }
+# Functions
+info() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[✗]${NC} $1" >&2
+}
+
+section() {
+    echo ""
+    echo -e "${CYAN}========================================${NC}"
+    echo -e "${CYAN} $1${NC}"
+    echo -e "${CYAN}========================================${NC}"
+}
 
 section "ArgoCD Credentials"
 
 found=0
 
 for context in $(kubectl config get-contexts -o name 2>/dev/null); do
-  # Extract cluster name from context (handles both ARN and alias formats)
-  cluster_name=$(echo "$context" | grep -oE 'myapp-(dev|prod)' || true)
-  [[ -z "$cluster_name" ]] && continue
+    # Extract cluster name from context (handles both ARN and alias formats)
+    cluster_name=$(echo "$context" | grep -oE 'myapp-(dev|prod)' || true)
+    [[ -z "$cluster_name" ]] && continue
 
-  url="${ARGOCD_URLS[$cluster_name]:-}"
-  [[ -z "$url" ]] && continue
-  # Prevent processing the same cluster twice (ARN + alias)
-  unset "ARGOCD_URLS[$cluster_name]"
+    url="${ARGOCD_URLS[$cluster_name]:-}"
+    [[ -z "$url" ]] && continue
+    # Prevent processing the same cluster twice (ARN + alias)
+    unset "ARGOCD_URLS[$cluster_name]"
 
-  # Check if cluster is reachable
-  if ! kubectl cluster-info --context "$context" &>/dev/null; then
-    warn "$cluster_name — not reachable, skipping"
-    continue
-  fi
+    # Check if cluster is reachable
+    if ! kubectl cluster-info --context "$context" &>/dev/null; then
+        warn "$cluster_name — not reachable, skipping"
+        continue
+    fi
 
-  # Get password
-  password=$(kubectl -n argocd get secret argocd-initial-admin-secret \
-    --context "$context" \
-    -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+    # Get password
+    password=$(kubectl -n argocd get secret argocd-initial-admin-secret \
+        --context "$context" \
+        -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
 
-  if [[ -n "$password" ]]; then
-    info "$cluster_name"
-    echo "    URL:      $url"
-    echo "    Username: admin"
-    echo "    Password: $password"
-    found=$((found + 1))
-  else
-    warn "$cluster_name — ArgoCD secret not found"
-  fi
+    if [[ -n "$password" ]]; then
+        info "$cluster_name"
+        echo "    URL:      $url"
+        echo "    Username: admin"
+        echo "    Password: $password"
+        found=$((found + 1))
+    else
+        warn "$cluster_name — ArgoCD secret not found"
+    fi
 
-  echo ""
+    echo ""
 done
 
 if [[ $found -eq 0 ]]; then
-  err "No running clusters with ArgoCD found"
-  echo "  Make sure kubectl is configured: ./scripts/configure-kubectl.sh"
-  exit 1
+    error "No running clusters with ArgoCD found"
+    echo "  Make sure kubectl is configured: ./scripts/configure-kubectl.sh"
+    exit 1
 fi

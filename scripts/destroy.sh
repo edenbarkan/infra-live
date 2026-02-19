@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # 🧹 EKS Infrastructure Destroy Script
 # Usage: ALLOW_DESTROY=true ./destroy.sh [environment]
