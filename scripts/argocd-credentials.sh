@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Display ArgoCD credentials for all running clusters.
 # Automatically detects which EKS clusters are available.
