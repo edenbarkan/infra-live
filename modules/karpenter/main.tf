@@ -136,7 +136,8 @@ resource "kubectl_manifest" "node_pool" {
       # Disruption: when/how Karpenter can remove nodes
       disruption = {
         # Consolidation: if nodes are underutilized, merge workloads onto fewer nodes
-        consolidationPolicy = "WhenUnderutilized"
+        consolidationPolicy = "WhenEmptyOrUnderutilized"
+        consolidateAfter    = "30s"
 
         # Recycle nodes every 30 days (gets latest AMI patches)
         expireAfter = "720h"
