@@ -2,7 +2,7 @@ locals {
   environment  = "prod"
   cluster_name = "myapp-prod"
   vpc_cidr     = "10.1.0.0/16"
-  eks_version  = "1.30"
+  eks_version  = "1.35"
   namespaces   = ["production"]
 
   # VPC

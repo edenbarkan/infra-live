@@ -10,6 +10,12 @@ terraform {
 
 dependency "vpc" {
   config_path = "../vpc"             # Waits for VPC to be created first
+
+  mock_outputs = {
+    vpc_id          = "mock-vpc-id"
+    private_subnets = ["mock-subnet-1", "mock-subnet-2"]
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "destroy", "plan"]
 }
 
 locals {

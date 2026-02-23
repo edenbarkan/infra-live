@@ -16,7 +16,7 @@ resource "aws_iam_role" "lbc" {
   tags = var.tags
 }
 
-# Official AWS LBC IAM policy (v2.7.x)
+# Official AWS LBC IAM policy
 resource "aws_iam_policy" "lbc" {
   name   = "${var.cluster_name}-aws-lbc"
   policy = file("${path.module}/iam-policy.json")
@@ -42,7 +42,7 @@ resource "helm_release" "aws_lbc" {
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = "1.7.2"
+  version    = "1.11.0"
 
   set {
     name  = "clusterName"

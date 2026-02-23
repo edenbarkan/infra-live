@@ -5,7 +5,7 @@ locals {
   environment  = "dev"
   cluster_name = "myapp-dev"
   vpc_cidr     = "10.0.0.0/16"
-  eks_version  = "1.30"
+  eks_version  = "1.35"
   namespaces   = ["dev", "staging"]
 
   # VPC

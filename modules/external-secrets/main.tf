@@ -68,7 +68,7 @@ resource "helm_release" "external_secrets" {
   name             = "external-secrets"
   repository       = "https://charts.external-secrets.io"
   chart            = "external-secrets"
-  version          = "0.9.13"
+  version          = "0.12.1"
 
   # Run on system nodes
   set {
@@ -95,7 +95,7 @@ resource "helm_release" "external_secrets" {
 
 resource "kubectl_manifest" "cluster_secret_store" {
   yaml_body = yamlencode({
-    apiVersion = "external-secrets.io/v1beta1"
+    apiVersion = "external-secrets.io/v1"
     kind       = "ClusterSecretStore"
     metadata   = { name = "aws-secrets-manager" }
     spec = {
