@@ -35,7 +35,7 @@ resource "helm_release" "karpenter" {
   name             = "karpenter"
   repository       = "oci://public.ecr.aws/karpenter"
   chart            = "karpenter"
-  version          = "1.0.0"
+  version          = "1.9.0"
   wait             = true
 
   values = [yamlencode({
@@ -61,12 +61,15 @@ resource "helm_release" "karpenter" {
 
 resource "kubectl_manifest" "node_class" {
   yaml_body = yamlencode({
-    apiVersion = "karpenter.k8s.aws/v1beta1"
+    apiVersion = "karpenter.k8s.aws/v1"
     kind       = "EC2NodeClass"
     metadata   = { name = "default" }
     spec = {
       # Amazon Linux 2023 (latest, optimized for EKS)
-      amiFamily = "AL2023"
+      # v1 API uses amiSelectorTerms instead of amiFamily
+      amiSelectorTerms = [{
+        alias = "al2023@latest"
+      }]
 
       # IAM role for nodes (allows kubelet to join cluster, pull ECR images, etc.)
       role = module.karpenter.node_iam_role_name
@@ -80,9 +83,6 @@ resource "kubectl_manifest" "node_class" {
       securityGroupSelectorTerms = [{
         tags = { "karpenter.sh/discovery" = var.cluster_name }
       }]
-
-      # User data script (optional customizations)
-      # userData can be added here if you need custom node setup
     }
   })
 
@@ -94,7 +94,7 @@ resource "kubectl_manifest" "node_class" {
 
 resource "kubectl_manifest" "node_pool" {
   yaml_body = yamlencode({
-    apiVersion = "karpenter.sh/v1beta1"
+    apiVersion = "karpenter.sh/v1"
     kind       = "NodePool"
     metadata   = { name = "default" }
     spec = {
@@ -119,8 +119,12 @@ resource "kubectl_manifest" "node_pool" {
             }
           ]
 
-          # Link to EC2NodeClass (tells Karpenter HOW to launch)
-          nodeClassRef = { name = "default" }
+          # Link to EC2NodeClass (v1 API requires group + kind + name)
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "default"
+          }
         }
       }
 

@@ -4,7 +4,7 @@ resource "helm_release" "argocd" {
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
-  version          = "6.7.3"
+  version          = "7.8.0"
 
   values = [yamlencode({
     global = {

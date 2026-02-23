@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Update /etc/hosts with ALB IPs for all running app environments.
 # Automatically detects which EKS clusters are available.

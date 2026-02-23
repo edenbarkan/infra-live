@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # 🚀 EKS Infrastructure Deployment Script
 # Usage: ./deploy.sh [environment]
